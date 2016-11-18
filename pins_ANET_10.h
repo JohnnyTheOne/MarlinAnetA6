@@ -24,11 +24,14 @@
  * Sanguinololu board pin assignments
  */
 
-#define BOARD_NAME "Anet"
 
-#if defined(__AVR_ATmega1284P__)
-#define LARGE_FLASH true
+#ifndef BOARD_NAME
+  #define BOARD_NAME "Anet v1.0"
 #endif
+
+
+#define LARGE_FLASH true
+
 
 #define SANGUINOLOLU_V_1_2
 #include "pins_SANGUINOLOLU_11.h"
@@ -39,56 +42,51 @@
 #define LED_PIN -1
 #define FAN_PIN 4
 
-#ifdef ENABLED(ULTRA_LCD) && ENABLED(NEWPANEL)
+#if ENABLED(ULTRA_LCD) && ENABLED(NEWPANEL)
+	#undef LCD_PINS_RS
+	#undef LCD_PINS_ENABLE
+	#undef LCD_PINS_D4
+	#undef LCD_PINS_D5
+	#undef LCD_PINS_D6
+	#undef LCD_PINS_D7
 
-	#ifdef DOGLCD
-    // !DOGLCD - Standard Hitachi LCD controller
-    #undef LCD_PINS_RS          
-    #undef LCD_PINS_ENABLE     
+	#if ENABLED(ADC_KEYPAD)
+		#undef BTN_EN1
+		#undef BTN_EN2
+		#undef BTN_ENC
 
-    #define LCD_PINS_RS         27
-    #define LCD_PINS_ENABLE     30
-    //#define LCD_PINS_RW         28
-	
-	#else
+		#define LCD_PINS_RS        28
+		#define LCD_PINS_ENABLE    29
+		#define LCD_PINS_D4        10
+		#define LCD_PINS_D5        11
+		#define LCD_PINS_D6        16
+		#define LCD_PINS_D7        17
 
- //encoder pins
-#undef BTN_EN1
-#undef BTN_EN2
-#undef BTN_ENC
+		#define BTN_EN1 			  -1
+		#define BTN_EN2 			  -1
+		#define BTN_ENC 			  -1
 
-#define BTN_EN1	-1
-#define BTN_EN2	-1
-#define BTN_ENC	-1
+		#define ENCODER_FEEDRATE_DEADZONE 2
+	#elif ENABLED(U8GLIB_ST7920)
+		#undef BEEPER_PIN
 
- //lcd pins
-#undef LCD_PINS_RS
-#undef LCD_PINS_ENABLE
-#undef LCD_PINS_D4
-#undef LCD_PINS_D5
-#undef LCD_PINS_D6
-#undef LCD_PINS_D7
+		#define BEEPER_PIN -1
 
-#define LCD_PINS_RS			28
-#define LCD_PINS_ENABLE		29
-#define LCD_PINS_D4			10
-#define LCD_PINS_D5			11
-#define LCD_PINS_D6			16
-#define LCD_PINS_D7			17
+		#define LCD_PINS_RS        27
+		#define LCD_PINS_ENABLE    28
+		#define LCD_PINS_D4        30
 
+		#define ST7920_DELAY_1 DELAY_0_NOP
+		#define ST7920_DELAY_2 DELAY_1_NOP
+		#define ST7920_DELAY_3 DELAY_2_NOP
+
+		#ifndef ENCODER_STEPS_PER_MENU_ITEM
+			#define ENCODER_STEPS_PER_MENU_ITEM 1
+		#endif
+		#ifndef ENCODER_PULSES_PER_STEP
+			#define ENCODER_PULSES_PER_STEP 4
+		#endif
 	#endif
-	
-	//#if ENABLED(ADC_KEYPAD)
-	//	#define ADC_KEYPAD_PIN 1
-	//#endif
 
 #endif
-
-
-//our pin for debugging.
-//#define DEBUG_PIN 0
-
-//our RS485 pins
-//#define TX_ENABLE_PIN 12
-//#define RX_ENABLE_PIN 13
 

@@ -168,14 +168,16 @@
 
 // @section extruder
 
-//  extruder run-out prevention.
-//if the machine is idle, and the temperature over MINTEMP, every couple of SECONDS some filament is extruded
+// Extruder runout prevention.
+// If the machine is idle and the temperature over MINTEMP
+// then extrude some filament every couple of SECONDS.
 //#define EXTRUDER_RUNOUT_PREVENT
-#define EXTRUDER_RUNOUT_MINTEMP 190
-#define EXTRUDER_RUNOUT_SECONDS 30
-#define EXTRUDER_RUNOUT_ESTEPS 14   // mm filament
-#define EXTRUDER_RUNOUT_SPEED 1500  // extrusion speed
-#define EXTRUDER_RUNOUT_EXTRUDE 100
+#if ENABLED(EXTRUDER_RUNOUT_PREVENT)
+  #define EXTRUDER_RUNOUT_MINTEMP 190
+  #define EXTRUDER_RUNOUT_SECONDS 30
+  #define EXTRUDER_RUNOUT_SPEED 1500  // mm/m
+  #define EXTRUDER_RUNOUT_EXTRUDE 5   // mm
+#endif
 
 // @section temperature
 
@@ -194,26 +196,37 @@
 // When first starting the main fan, run it at full speed for the
 // given number of milliseconds.  This gets the fan spinning reliably
 // before setting a PWM value. (Does not work with software PWM for fan on Sanguinololu)
-//#define FAN_KICKSTART_TIME 100
+#define FAN_KICKSTART_TIME 100
 
 // This defines the minimal speed for the main fan, run in PWM mode
 // to enable uncomment and set minimal PWM speed for reliable running (1-255)
 // if fan speed is [1 - (FAN_MIN_PWM-1)] it is set to FAN_MIN_PWM
-//#define FAN_MIN_PWM 50
+#define FAN_MIN_PWM 50
 
 // @section extruder
 
-// Extruder cooling fans
-// Configure fan pin outputs to automatically turn on/off when the associated
-// extruder temperature is above/below EXTRUDER_AUTO_FAN_TEMPERATURE.
-// Multiple extruders can be assigned to the same pin in which case
-// the fan will turn on when any selected extruder is above the threshold.
-#define EXTRUDER_0_AUTO_FAN_PIN -1
-#define EXTRUDER_1_AUTO_FAN_PIN -1
-#define EXTRUDER_2_AUTO_FAN_PIN -1
-#define EXTRUDER_3_AUTO_FAN_PIN -1
+/**
+ * Extruder cooling fans
+ *
+ * Extruder auto fans automatically turn on when their extruders'
+ * temperatures go above EXTRUDER_AUTO_FAN_TEMPERATURE.
+ *
+ * Your board's pins file specifies the recommended pins. Override those here
+ * or set to -1 to disable completely.
+ *
+ * Multiple extruders can be assigned to the same pin in which case
+ * the fan will turn on when any selected extruder is above the threshold.
+ */
+#define E0_AUTO_FAN_PIN -1
+#define E1_AUTO_FAN_PIN -1
+#define E2_AUTO_FAN_PIN -1
+#define E3_AUTO_FAN_PIN -1
 #define EXTRUDER_AUTO_FAN_TEMPERATURE 50
 #define EXTRUDER_AUTO_FAN_SPEED   255  // == full speed
+
+// Define a pin to turn case light on/off
+//#define CASE_LIGHT_PIN 4
+//#define CASE_LIGHT_DEFAULT_ON   // Uncomment to set default state to on
 
 //===========================================================================
 //============================ Mechanical Settings ==========================
@@ -300,7 +313,7 @@
   //                           once. (2nd extruder x offset and temp offset are set using: M605 S2 [Xnnn] [Rmmm])
 
   // This is the default power-up mode which can be later using M605.
-  #define DEFAULT_DUAL_X_CARRIAGE_MODE 0
+  #define DEFAULT_DUAL_X_CARRIAGE_MODE DXC_FULL_CONTROL_MODE
 
   // Default settings in "Auto-park Mode"
   #define TOOLCHANGE_PARK_ZLIFT   0.2      // the distance to raise Z axis when parking an extruder
@@ -318,7 +331,7 @@
 #define Y_HOME_BUMP_MM 5
 #define Z_HOME_BUMP_MM 2
 #define HOMING_BUMP_DIVISOR {2, 2, 4}  // Re-Bump Speed Divisor (Divides the Homing Feedrate)
-//#define QUICK_HOME  //if this is defined, if both x and y are to be homed, a diagonal move will be performed initially.
+#define QUICK_HOME  //if this is defined, if both x and y are to be homed, a diagonal move will be performed initially.
 
 // When G28 is called, this option will make Y home before X
 //#define HOME_Y_BEFORE_X
@@ -377,7 +390,7 @@
 #define MICROSTEP_MODES {16,16,16,16,16} // [1,2,4,8,16]
 
 // Motor Current setting (Only functional when motor driver current ref pins are connected to a digital trimpot on supported boards)
-#define DIGIPOT_MOTOR_CURRENT {135,135,135,135,135} // Values 0-255 (RAMBO 135 = ~0.75A, 185 = ~1A)
+#define DIGIPOT_MOTOR_CURRENT {185,185,185,185,185} // Values 0-255 (RAMBO 135 = ~0.75A, 185 = ~1A)
 
 // Motor Current controlled via PWM (Overridable on supported boards with PWM-driven motor driver current)
 //#define PWM_MOTOR_CURRENT {1300, 1300, 1250} // Values in milliamps
@@ -499,9 +512,20 @@
   #define D_FILAMENT 2.85
 #endif
 
-// Implementation of a linear pressure control
-// Assumption: advance = k * (delta velocity)
-// K=0 means advance disabled. A good value for a gregs wade extruder will be around K=75
+/**
+ * Implementation of linear pressure control
+ *
+ * Assumption: advance = k * (delta velocity)
+ * K=0 means advance disabled.
+ * To get a rough start value for calibration, measure your "free filament length"
+ * between the hobbed bolt and the nozzle (in cm). Use the formula below that fits
+ * your setup, where L is the "free filament length":
+ *
+ * Filament diameter           |   1.75mm  |    3.0mm   |
+ * ----------------------------|-----------|------------|
+ * Stiff filament (PLA)        | K=47*L/10 | K=139*L/10 |
+ * Softer filament (ABS, nGen) | K=88*L/10 | K=260*L/10 |
+ */
 //#define LIN_ADVANCE
 
 #if ENABLED(LIN_ADVANCE)
@@ -530,7 +554,18 @@
 // Support for G5 with XYZE destination and IJPQ offsets. Requires ~2666 bytes.
 //#define BEZIER_CURVE_SUPPORT
 
-const unsigned int dropsegments = 5; //everything with less than this number of steps will be ignored as move and joined with the next movement
+// G38.2 and G38.3 Probe Target
+//#define G38_PROBE_TARGET
+#if ENABLED(G38_PROBE_TARGET)
+  #define G38_MINIMUM_MOVE 0.0275 // minimum distance in mm that will produce a move (determined using the print statement in check_move)
+#endif
+
+// Moves (or segments) with fewer steps than this will be joined with the next move
+#define MIN_STEPS_PER_SEGMENT 6
+
+// The minimum pulse width (in µs) for stepping a stepper.
+// Set this if you find stepping unreliable, or if using a very fast CPU.
+#define MINIMUM_STEPPER_PULSE 0 // (µs) The smallest stepper pulse allowed
 
 // @section temperature
 
@@ -546,7 +581,7 @@ const unsigned int dropsegments = 5; //everything with less than this number of 
 // The number of linear motions that can be in the plan at any give time.
 // THE BLOCK_BUFFER_SIZE NEEDS TO BE A POWER OF 2, i.g. 8,16,32 because shifts and ors are used to do the ring-buffering.
 #if ENABLED(SDSUPPORT)
-  #define BLOCK_BUFFER_SIZE 16   // SD,LCD,Buttons take more memory, block buffer needs to be smaller
+  #define BLOCK_BUFFER_SIZE 16 // SD,LCD,Buttons take more memory, block buffer needs to be smaller
 #else
   #define BLOCK_BUFFER_SIZE 16 // maximize block buffer
 #endif
@@ -563,7 +598,7 @@ const unsigned int dropsegments = 5; //everything with less than this number of 
 // For ADVANCED_OK (M105) you need 32 bytes.
 // For debug-echo: 128 bytes for the optimal speed.
 // Other output doesn't need to be that speedy.
-// :[0,2,4,8,16,32,64,128,256]
+// :[0, 2, 4, 8, 16, 32, 64, 128, 256]
 #define TX_BUFFER_SIZE 0
 
 // Enable an emergency-command parser to intercept certain commands as they
@@ -773,27 +808,43 @@ const unsigned int dropsegments = 5; //everything with less than this number of 
  *
  * ; Example #1
  * ; This macro send the string "Marlin" to the slave device with address 0x63 (99)
- * ; It uses multiple M155 commands with one B<base 10> arg
- * M155 A99  ; Target slave address
- * M155 B77  ; M
- * M155 B97  ; a
- * M155 B114 ; r
- * M155 B108 ; l
- * M155 B105 ; i
- * M155 B110 ; n
- * M155 S1   ; Send the current buffer
+ * ; It uses multiple M260 commands with one B<base 10> arg
+ * M260 A99  ; Target slave address
+ * M260 B77  ; M
+ * M260 B97  ; a
+ * M260 B114 ; r
+ * M260 B108 ; l
+ * M260 B105 ; i
+ * M260 B110 ; n
+ * M260 S1   ; Send the current buffer
  *
  * ; Example #2
  * ; Request 6 bytes from slave device with address 0x63 (99)
- * M156 A99 B5
+ * M261 A99 B5
  *
  * ; Example #3
- * ; Example serial output of a M156 request
+ * ; Example serial output of a M261 request
  * echo:i2c-reply: from:99 bytes:5 data:hello
  */
 
 // @section i2cbus
 
 //#define EXPERIMENTAL_I2CBUS
+#define I2C_SLAVE_ADDRESS  0 // Set a value from 8 to 127 to act as a slave
+
+/**
+ * Add M43 command for pins info and testing
+ */
+//#define PINS_DEBUGGING
+
+/**
+ * Auto-report temperatures with M155 S<seconds>
+ */
+//#define AUTO_REPORT_TEMPERATURES
+
+/**
+ * Include capabilities in M115 output
+ */
+//#define EXTENDED_CAPABILITIES_REPORT
 
 #endif // CONFIGURATION_ADV_H
