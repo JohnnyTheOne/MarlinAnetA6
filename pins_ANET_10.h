@@ -70,7 +70,7 @@
 	#elif ENABLED(U8GLIB_ST7920)
 		#undef BEEPER_PIN
 
-		#define BEEPER_PIN -1
+		#define BEEPER_PIN 17
 
 		#define LCD_PINS_RS        27
 		#define LCD_PINS_ENABLE    28

@@ -96,8 +96,6 @@
 #define BOARD_BQ_ZUM_MEGA_3D    503  // bq ZUM Mega 3D
 #define BOARD_ANET_10			100  // Anet v1.0
 
-#define BOARD_99                99   // This is in pins.h but...?
-
 #define MB(board) (MOTHERBOARD==BOARD_##board)
 
 #endif //__BOARDS_H

@@ -31,8 +31,6 @@
 #define LANGUAGE_DA_H
 
 #define MAPPER_C2C3
-// Define SIMULATE_ROMFONT to see what is seen on the character based display defined in Configuration.h
-//#define SIMULATE_ROMFONT
 #define DISPLAY_CHARSET_ISO10646_1
 
 #define WELCOME_MSG                         MACHINE_NAME " er klar"
@@ -211,6 +209,7 @@
 #define MSG_DRIVE_STRENGTH                  "Driv Styrke"
 #define MSG_DAC_PERCENT                     "Driv %"
 #define MSG_DAC_EEPROM_WRITE                "DAC EEPROM Skriv"
+
 #define MSG_FILAMENT_CHANGE_HEADER          "SKIFT FILAMENT"
 #define MSG_FILAMENT_CHANGE_OPTION_HEADER   "Skift muligheder:"
 #define MSG_FILAMENT_CHANGE_OPTION_EXTRUDE  "Extruder mere"

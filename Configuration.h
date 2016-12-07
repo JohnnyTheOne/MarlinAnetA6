@@ -145,6 +145,9 @@
 // :[1, 2, 3, 4]
 #define EXTRUDERS 1
 
+// Enable if your E steppers or extruder gear ratios are not identical
+//#define DISTINCT_E_FACTORS
+
 // For Cyclops or any "multi-extruder" that shares a single nozzle.
 //#define SINGLENOZZLE
 
@@ -187,7 +190,7 @@
  *
  * :{ 0:'No power switch', 1:'ATX', 2:'X-Box 360' }
  */
-#define POWER_SUPPLY 0
+#define POWER_SUPPLY 1
 
 #if POWER_SUPPLY > 0
   // Enable this option to leave the PSU off at startup.
@@ -200,55 +203,64 @@
 //===========================================================================
 //============================= Thermal Settings ============================
 //===========================================================================
-//
-//--NORMAL IS 4.7kohm PULLUP!-- 1kohm pullup can be used on hotend sensor, using correct resistor and table
-//
-//// Temperature sensor settings:
-// -3 is thermocouple with MAX31855 (only for sensor 0)
-// -2 is thermocouple with MAX6675 (only for sensor 0)
-// -1 is thermocouple with AD595
-// 0 is not used
-// 1 is 100k thermistor - best choice for EPCOS 100k (4.7k pullup)
-// 2 is 200k thermistor - ATC Semitec 204GT-2 (4.7k pullup)
-// 3 is Mendel-parts thermistor (4.7k pullup)
-// 4 is 10k thermistor !! do not use it for a hotend. It gives bad resolution at high temp. !!
-// 5 is 100K thermistor - ATC Semitec 104GT-2 (Used in ParCan & J-Head) (4.7k pullup)
-// 6 is 100k EPCOS - Not as accurate as table 1 (created using a fluke thermocouple) (4.7k pullup)
-// 7 is 100k Honeywell thermistor 135-104LAG-J01 (4.7k pullup)
-// 71 is 100k Honeywell thermistor 135-104LAF-J01 (4.7k pullup)
-// 8 is 100k 0603 SMD Vishay NTCS0603E3104FXT (4.7k pullup)
-// 9 is 100k GE Sensing AL03006-58.2K-97-G1 (4.7k pullup)
-// 10 is 100k RS thermistor 198-961 (4.7k pullup)
-// 11 is 100k beta 3950 1% thermistor (4.7k pullup)
-// 12 is 100k 0603 SMD Vishay NTCS0603E3104FXT (4.7k pullup) (calibrated for Makibox hot bed)
-// 13 is 100k Hisens 3950  1% up to 300°C for hotend "Simple ONE " & "Hotend "All In ONE"
-// 20 is the PT100 circuit found in the Ultimainboard V2.x
-// 60 is 100k Maker's Tool Works Kapton Bed Thermistor beta=3950
-// 66 is 4.7M High Temperature thermistor from Dyze Design
-// 70 is the 100K thermistor found in the bq Hephestos 2
-//
-//    1k ohm pullup tables - This is not normal, you would have to have changed out your 4.7k for 1k
-//                          (but gives greater accuracy and more stable PID)
-// 51 is 100k thermistor - EPCOS (1k pullup)
-// 52 is 200k thermistor - ATC Semitec 204GT-2 (1k pullup)
-// 55 is 100k thermistor - ATC Semitec 104GT-2 (Used in ParCan & J-Head) (1k pullup)
-//
-// 1047 is Pt1000 with 4k7 pullup
-// 1010 is Pt1000 with 1k pullup (non standard)
-// 147 is Pt100 with 4k7 pullup
-// 110 is Pt100 with 1k pullup (non standard)
-// 998 and 999 are Dummy Tables. They will ALWAYS read 25°C or the temperature defined below.
-//     Use it for Testing or Development purposes. NEVER for production machine.
-//#define DUMMY_THERMISTOR_998_VALUE 25
-//#define DUMMY_THERMISTOR_999_VALUE 100
-// :{ '0': "Not used", '1':"100k / 4.7k - EPCOS", '2':"200k / 4.7k - ATC Semitec 204GT-2", '3':"Mendel-parts / 4.7k", '4':"10k !! do not use for a hotend. Bad resolution at high temp. !!", '5':"100K / 4.7k - ATC Semitec 104GT-2 (Used in ParCan & J-Head)", '6':"100k / 4.7k EPCOS - Not as accurate as Table 1", '7':"100k / 4.7k Honeywell 135-104LAG-J01", '8':"100k / 4.7k 0603 SMD Vishay NTCS0603E3104FXT", '9':"100k / 4.7k GE Sensing AL03006-58.2K-97-G1", '10':"100k / 4.7k RS 198-961", '11':"100k / 4.7k beta 3950 1%", '12':"100k / 4.7k 0603 SMD Vishay NTCS0603E3104FXT (calibrated for Makibox hot bed)", '13':"100k Hisens 3950  1% up to 300°C for hotend 'Simple ONE ' & hotend 'All In ONE'", '20':"PT100 (Ultimainboard V2.x)", '51':"100k / 1k - EPCOS", '52':"200k / 1k - ATC Semitec 204GT-2", '55':"100k / 1k - ATC Semitec 104GT-2 (Used in ParCan & J-Head)", '60':"100k Maker's Tool Works Kapton Bed Thermistor beta=3950", '66':"Dyze Design 4.7M High Temperature thermistor", '70':"the 100K thermistor found in the bq Hephestos 2", '71':"100k / 4.7k Honeywell 135-104LAF-J01", '147':"Pt100 / 4.7k", '1047':"Pt1000 / 4.7k", '110':"Pt100 / 1k (non-standard)", '1010':"Pt1000 / 1k (non standard)", '-3':"Thermocouple + MAX31855 (only for sensor 0)", '-2':"Thermocouple + MAX6675 (only for sensor 0)", '-1':"Thermocouple + AD595",'998':"Dummy 1", '999':"Dummy 2" }
+
+/**
+ * --NORMAL IS 4.7kohm PULLUP!-- 1kohm pullup can be used on hotend sensor, using correct resistor and table
+ * 
+ * Temperature sensors available:
+ *
+ *    -3 : thermocouple with MAX31855 (only for sensor 0)
+ *    -2 : thermocouple with MAX6675 (only for sensor 0)
+ *    -1 : thermocouple with AD595
+ *     0 : not used
+ *     1 : 100k thermistor - best choice for EPCOS 100k (4.7k pullup)
+ *     2 : 200k thermistor - ATC Semitec 204GT-2 (4.7k pullup)
+ *     3 : Mendel-parts thermistor (4.7k pullup)
+ *     4 : 10k thermistor !! do not use it for a hotend. It gives bad resolution at high temp. !!
+ *     5 : 100K thermistor - ATC Semitec 104GT-2 (Used in ParCan & J-Head) (4.7k pullup)
+ *     6 : 100k EPCOS - Not as accurate as table 1 (created using a fluke thermocouple) (4.7k pullup)
+ *     7 : 100k Honeywell thermistor 135-104LAG-J01 (4.7k pullup)
+ *    71 : 100k Honeywell thermistor 135-104LAF-J01 (4.7k pullup)
+ *     8 : 100k 0603 SMD Vishay NTCS0603E3104FXT (4.7k pullup)
+ *     9 : 100k GE Sensing AL03006-58.2K-97-G1 (4.7k pullup)
+ *    10 : 100k RS thermistor 198-961 (4.7k pullup)
+ *    11 : 100k beta 3950 1% thermistor (4.7k pullup)
+ *    12 : 100k 0603 SMD Vishay NTCS0603E3104FXT (4.7k pullup) (calibrated for Makibox hot bed)
+ *    13 : 100k Hisens 3950  1% up to 300°C for hotend "Simple ONE " & "Hotend "All In ONE"
+ *    20 : the PT100 circuit found in the Ultimainboard V2.x
+ *    60 : 100k Maker's Tool Works Kapton Bed Thermistor beta=3950
+ *    66 : 4.7M High Temperature thermistor from Dyze Design
+ *    70 : the 100K thermistor found in the bq Hephestos 2
+ * 
+ *       1k ohm pullup tables - This is atypical, and requires changing out the 4.7k pullup for 1k.
+ *                              (but gives greater accuracy and more stable PID)
+ *    51 : 100k thermistor - EPCOS (1k pullup)
+ *    52 : 200k thermistor - ATC Semitec 204GT-2 (1k pullup)
+ *    55 : 100k thermistor - ATC Semitec 104GT-2 (Used in ParCan & J-Head) (1k pullup)
+ * 
+ *  1047 : Pt1000 with 4k7 pullup
+ *  1010 : Pt1000 with 1k pullup (non standard)
+ *   147 : Pt100 with 4k7 pullup
+ *   110 : Pt100 with 1k pullup (non standard)
+ *
+ *         Use these for Testing or Development purposes. NEVER for production machine.
+ *   998 : Dummy Table that ALWAYS reads 25°C or the temperature defined below.
+ *   999 : Dummy Table that ALWAYS reads 100°C or the temperature defined below.
+ *
+ * :{ '0': "Not used", '1':"100k / 4.7k - EPCOS", '2':"200k / 4.7k - ATC Semitec 204GT-2", '3':"Mendel-parts / 4.7k", '4':"10k !! do not use for a hotend. Bad resolution at high temp. !!", '5':"100K / 4.7k - ATC Semitec 104GT-2 (Used in ParCan & J-Head)", '6':"100k / 4.7k EPCOS - Not as accurate as Table 1", '7':"100k / 4.7k Honeywell 135-104LAG-J01", '8':"100k / 4.7k 0603 SMD Vishay NTCS0603E3104FXT", '9':"100k / 4.7k GE Sensing AL03006-58.2K-97-G1", '10':"100k / 4.7k RS 198-961", '11':"100k / 4.7k beta 3950 1%", '12':"100k / 4.7k 0603 SMD Vishay NTCS0603E3104FXT (calibrated for Makibox hot bed)", '13':"100k Hisens 3950  1% up to 300°C for hotend 'Simple ONE ' & hotend 'All In ONE'", '20':"PT100 (Ultimainboard V2.x)", '51':"100k / 1k - EPCOS", '52':"200k / 1k - ATC Semitec 204GT-2", '55':"100k / 1k - ATC Semitec 104GT-2 (Used in ParCan & J-Head)", '60':"100k Maker's Tool Works Kapton Bed Thermistor beta=3950", '66':"Dyze Design 4.7M High Temperature thermistor", '70':"the 100K thermistor found in the bq Hephestos 2", '71':"100k / 4.7k Honeywell 135-104LAF-J01", '147':"Pt100 / 4.7k", '1047':"Pt1000 / 4.7k", '110':"Pt100 / 1k (non-standard)", '1010':"Pt1000 / 1k (non standard)", '-3':"Thermocouple + MAX31855 (only for sensor 0)", '-2':"Thermocouple + MAX6675 (only for sensor 0)", '-1':"Thermocouple + AD595",'998':"Dummy 1", '999':"Dummy 2" }
+ */
 #define TEMP_SENSOR_0 5
 #define TEMP_SENSOR_1 0
 #define TEMP_SENSOR_2 0
 #define TEMP_SENSOR_3 0
-#define TEMP_SENSOR_BED 5
+#define TEMP_SENSOR_BED 1
 
-// This makes temp sensor 1 a redundant sensor for sensor 0. If the temperatures difference between these sensors is to high the print will be aborted.
+// Dummy thermistor constant temperature readings, for use with 998 and 999
+#define DUMMY_THERMISTOR_998_VALUE 25
+#define DUMMY_THERMISTOR_999_VALUE 100
+
+// Use temp sensor 1 as a redundant sensor with sensor 0. If the readings
+// from the two sensors differ too much the print will be aborted.
 //#define TEMP_SENSOR_1_AS_REDUNDANT
 #define MAX_REDUNDANT_TEMP_SENSOR_DIFF 10
 
@@ -278,7 +290,7 @@
 #define HEATER_1_MAXTEMP 275
 #define HEATER_2_MAXTEMP 275
 #define HEATER_3_MAXTEMP 275
-#define BED_MAXTEMP 150
+#define BED_MAXTEMP 130
 
 //===========================================================================
 //============================= PID Settings ================================
@@ -315,6 +327,11 @@
   //#define  DEFAULT_Kp 63.0
   //#define  DEFAULT_Ki 2.25
   //#define  DEFAULT_Kd 440
+
+  // Anet Autotune on 07-12-16 FIND YOUR OWN: "M303 E0 C8 S200" to run autotune on the bed at 200 degrees C for 8 cycles.
+	//#define  DEFAULT_Kp 21.13
+	//#define  DEFAULT_Ki 1.14
+	//#define  DEFAULT_Kd 97.65
 
 #endif // PIDTEMP
 
@@ -356,7 +373,7 @@
   //#define  DEFAULT_bedKi 1.41
   //#define  DEFAULT_bedKd 1675.16
 
-  // FIND YOUR OWN: "M303 E-1 C8 S90" to run autotune on the bed at 90 degreesC for 8 cycles.
+  // FIND YOUR OWN: "M303 E-1 C8 S90" to run autotune on the bed at 90 degrees C for 8 cycles.
 #endif // PIDTEMPBED
 
 // @section extruder
@@ -399,9 +416,13 @@
 // @section machine
 
 // Uncomment one of these options to enable CoreXY, CoreXZ, or CoreYZ kinematics
+// either in the usual order or reversed
 //#define COREXY
 //#define COREXZ
 //#define COREYZ
+//#define COREYX
+//#define COREZX
+//#define COREZY
 
 // Enable this option for Toshiba steppers
 //#define CONFIG_STEPPERS_TOSHIBA
@@ -445,6 +466,9 @@
 #define Z_MAX_ENDSTOP_INVERTING false // set to true to invert the logic of the endstop.
 #define Z_MIN_PROBE_ENDSTOP_INVERTING false // set to true to invert the logic of the endstop.
 
+// Enable this feature if all enabled endstop pins are interrupt-capable.
+// This will remove the need to poll the interrupt pins, saving many CPU cycles.
+//#define ENDSTOP_INTERRUPTS_FEATURE
 
 //=============================================================================
 //============================== Movement Settings ============================
@@ -456,26 +480,31 @@
  *
  * These settings can be reset by M502
  *
+ * You can set distinct factors for each E stepper, if needed.
+ * If fewer factors are given, the last will apply to the rest.
+ *
  * Note that if EEPROM is enabled, saved values will override these.
  */
 
 /**
  * Default Axis Steps Per Unit (steps/mm)
  * Override with M92
+ *                                      X, Y, Z, E0 [, E1[, E2[, E3]]]
  */
 #define DEFAULT_AXIS_STEPS_PER_UNIT   { 100, 100, 400, 101.5 }
 
 /**
  * Default Max Feed Rate (mm/s)
  * Override with M203
+ *                                      X, Y, Z, E0 [, E1[, E2[, E3]]]
  */
-#define DEFAULT_MAX_FEEDRATE          { 400, 400, 4, 25 }
+#define DEFAULT_MAX_FEEDRATE          { 400, 400, 5, 25 }
 
 /**
  * Default Max Acceleration (change/s) change = mm/s
+ * (Maximum start speed for accelerated moves)
  * Override with M201
- *
- * Maximum start speed for accelerated moves: { X, Y, Z, E }
+ *                                      X, Y, Z, E0 [, E1[, E2[, E3]]]
  */
 #define DEFAULT_MAX_ACCELERATION      { 9000, 5000, 2000, 10000 }
 
@@ -498,10 +527,10 @@
  * When changing speed and direction, if the difference is less than the
  * value set here, it may happen instantaneously.
  */
-#define DEFAULT_XJERK                 20.0
-#define DEFAULT_YJERK                 20.0
+#define DEFAULT_XJERK                 15.0
+#define DEFAULT_YJERK                 15.0
 #define DEFAULT_ZJERK                  0.3
-#define DEFAULT_EJERK                   10
+#define DEFAULT_EJERK                  5.0
 
 
 //===========================================================================
@@ -631,8 +660,8 @@
  * Example: `M851 Z-5` with a CLEARANCE of 4  =>  9mm from bed to nozzle.
  *     But: `M851 Z+1` with a CLEARANCE of 2  =>  2mm from bed to nozzle.
  */
-#define Z_CLEARANCE_DEPLOY_PROBE   5 // Z Clearance for Deploy/Stow
-#define Z_CLEARANCE_BETWEEN_PROBES  2 // Z Clearance between probe points
+#define Z_CLEARANCE_DEPLOY_PROBE   10 // Z Clearance for Deploy/Stow
+#define Z_CLEARANCE_BETWEEN_PROBES  5 // Z Clearance between probe points
 
 //
 // For M851 give a range for adjusting the Z probe offset
@@ -651,9 +680,9 @@
 // WARNING: When motors turn off there is a chance of losing position accuracy!
 #define DISABLE_X false
 #define DISABLE_Y false
-#define DISABLE_Z false
+#define DISABLE_Z true
 // Warn on display about possibly reduced accuracy
-//#define DISABLE_REDUCED_ACCURACY_WARNING
+#define DISABLE_REDUCED_ACCURACY_WARNING
 
 // @section extruder
 
@@ -697,7 +726,7 @@
 #define Y_MIN_POS 0
 #define Z_MIN_POS 0
 #define X_MAX_POS 225
-#define Y_MAX_POS 225
+#define Y_MAX_POS 230
 #define Z_MAX_POS 250
 
 //===========================================================================
@@ -727,11 +756,16 @@
 
   //#define MESH_G28_REST_ORIGIN // After homing all axes ('G28' or 'G28 XYZ') rest at origin [0,0,0]
 
-  #define MANUAL_BED_LEVELING  // Add display menu option for bed leveling.
+  //#define MANUAL_BED_LEVELING  // Add display menu option for bed leveling.
 
   #if ENABLED(MANUAL_BED_LEVELING)
     #define MBL_Z_STEP 0.025  // Step size while manually probing Z axis.
   #endif  // MANUAL_BED_LEVELING
+
+  // Gradually reduce leveling correction until a set height is reached,
+  // at which point movement will be level to the machine's XY plane.
+  // The height can be set with M420 Z<height>
+  #define ENABLE_LEVELING_FADE_HEIGHT
 
 #endif  // MESH_BED_LEVELING
 
@@ -770,7 +804,7 @@
  * Turn on with the command 'M111 S32'.
  * NOTE: Requires a lot of PROGMEM!
  */
-#define DEBUG_LEVELING_FEATURE
+//#define DEBUG_LEVELING_FEATURE
 
 #if ENABLED(AUTO_BED_LEVELING_LINEAR) || ENABLED(AUTO_BED_LEVELING_BILINEAR)
 
@@ -789,6 +823,25 @@
 
   // Probe along the Y axis, advancing X after each column
   //#define PROBE_Y_FIRST
+
+  #if ENABLED(AUTO_BED_LEVELING_BILINEAR)
+
+    // Gradually reduce leveling correction until a set height is reached,
+    // at which point movement will be level to the machine's XY plane.
+    // The height can be set with M420 Z<height>
+    #define ENABLE_LEVELING_FADE_HEIGHT
+
+    // 
+    // Experimental Subdivision of the grid by Catmull-Rom method.
+    // Synthesizes intermediate points to produce a more detailed mesh.
+    // 
+    //#define ABL_BILINEAR_SUBDIVISION
+    #if ENABLED(ABL_BILINEAR_SUBDIVISION)
+      // Number of subdivisions between probe points
+      #define BILINEAR_SUBDIVISIONS 3
+    #endif
+
+  #endif
 
 #elif ENABLED(AUTO_BED_LEVELING_3POINT)
 
@@ -813,7 +866,7 @@
 // @section homing
 
 // The center of the bed is at (X=0, Y=0)
-#define BED_CENTER_AT_110_110
+//#define BED_CENTER_AT_110_110
 
 // Manually set the home position. Leave these undefined for automatic settings.
 // For DELTA this is the top-center of the Cartesian print volume.
@@ -913,11 +966,11 @@
 //    P2: The nozzle height will be raised by Z-park amount but never going over
 //        the machine's limit of Z_MAX_POS.
 //
-#define NOZZLE_PARK_FEATURE
+//#define NOZZLE_PARK_FEATURE
 
 #if ENABLED(NOZZLE_PARK_FEATURE)
   // Specify a park position as { X, Y, Z }
-  #define NOZZLE_PARK_POINT { (X_MIN_POS + 225), (Y_MAX_POS - 0), 10 }
+  #define NOZZLE_PARK_POINT { (X_MIN_POS + 10), (Y_MAX_POS - 10), 20 }
 #endif
 
 //
@@ -1009,9 +1062,9 @@
 // Here you may choose the language used by Marlin on the LCD menus, the following
 // list of languages are available:
 //    en, an, bg, ca, cn, cz, de, el, el-gr, es, eu, fi, fr, gl, hr, it,
-//    kana, kana_utf8, nl, pl, pt, pt_utf8, pt-br, pt-br_utf8, ru, tr, test
+//    kana, kana_utf8, nl, pl, pt, pt_utf8, pt-br, pt-br_utf8, ru, tr, uk, test
 //
-// :{ 'en':'English', 'an':'Aragonese', 'bg':'Bulgarian', 'ca':'Catalan', 'cn':'Chinese', 'cz':'Czech', 'de':'German', 'el':'Greek', 'el-gr':'Greek (Greece)', 'es':'Spanish', 'eu':'Basque-Euskera', 'fi':'Finnish', 'fr':'French', 'gl':'Galician', 'hr':'Croatian', 'it':'Italian', 'kana':'Japanese', 'kana_utf8':'Japanese (UTF8)', 'nl':'Dutch', 'pl':'Polish', 'pt':'Portuguese', 'pt-br':'Portuguese (Brazilian)', 'pt-br_utf8':'Portuguese (Brazilian UTF8)', 'pt_utf8':'Portuguese (UTF8)', 'ru':'Russian', 'tr':'Turkish', 'test':'TEST' }
+// :{ 'en':'English', 'an':'Aragonese', 'bg':'Bulgarian', 'ca':'Catalan', 'cn':'Chinese', 'cz':'Czech', 'de':'German', 'el':'Greek', 'el-gr':'Greek (Greece)', 'es':'Spanish', 'eu':'Basque-Euskera', 'fi':'Finnish', 'fr':'French', 'gl':'Galician', 'hr':'Croatian', 'it':'Italian', 'kana':'Japanese', 'kana_utf8':'Japanese (UTF8)', 'nl':'Dutch', 'pl':'Polish', 'pt':'Portuguese', 'pt-br':'Portuguese (Brazilian)', 'pt-br_utf8':'Portuguese (Brazilian UTF8)', 'pt_utf8':'Portuguese (UTF8)', 'ru':'Russian', 'tr':'Turkish', 'uk':'Ukrainian', 'test':'TEST' }
 //
 #define LCD_LANGUAGE en
 
@@ -1075,7 +1128,7 @@
 //
 // Use CRC checks and retries on the SD communication.
 //
-//#define SD_CHECK_AND_RETRY
+#define SD_CHECK_AND_RETRY
 
 //
 // ENCODER SETTINGS
@@ -1114,7 +1167,7 @@
 //  If CLOCKWISE normally moves DOWN this makes it go UP.
 //  If CLOCKWISE normally moves UP this makes it go DOWN.
 //
-//#define REVERSE_MENU_DIRECTION
+#define REVERSE_MENU_DIRECTION
 
 //
 // Individual Axis Homing
@@ -1138,8 +1191,8 @@
 // Note: Test audio output with the G-Code:
 //  M300 S<frequency Hz> P<duration ms>
 //
-//#define LCD_FEEDBACK_FREQUENCY_DURATION_MS 100
-#define LCD_FEEDBACK_FREQUENCY_HZ 1000
+#define LCD_FEEDBACK_FREQUENCY_DURATION_MS 100
+#define LCD_FEEDBACK_FREQUENCY_HZ 2500
 
 //
 // CONTROLLER TYPE: Standard
@@ -1346,6 +1399,14 @@
 
 //define BlinkM/CyzRgb Support
 //#define BLINKM
+
+// Support for an RGB LED using 3 separate pins with optional PWM
+//#define RGB_LED
+#if ENABLED(RGB_LED)
+  #define RGB_LED_R_PIN 34
+  #define RGB_LED_G_PIN 43
+  #define RGB_LED_B_PIN 35
+#endif
 
 /*********************************************************************\
 * R/C SERVO support
