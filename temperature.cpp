@@ -33,6 +33,10 @@
   #include "stepper.h"
 #endif
 
+#if ENABLED(ENDSTOP_INTERRUPTS_FEATURE)
+  #include "endstops.h"
+#endif
+
 #if ENABLED(USE_WATCHDOG)
   #include "watchdog.h"
 #endif
@@ -731,7 +735,7 @@ void Temperature::manage_heater() {
       }
     #endif
 
-  } // Hotends Loop
+  } // HOTEND_LOOP
 
   #if HAS_AUTO_FAN
     if (ELAPSED(ms, next_auto_fan_check_ms)) { // only need to check fan state very infrequently
@@ -885,9 +889,8 @@ void Temperature::updateTemperaturesFromRawValues() {
   #if ENABLED(HEATER_0_USES_MAX6675)
     current_temperature_raw[0] = read_max6675();
   #endif
-  HOTEND_LOOP() {
+  HOTEND_LOOP()
     current_temperature[e] = Temperature::analog2temp(current_temperature_raw[e], e);
-  }
   current_temperature_bed = Temperature::analog2tempBed(current_temperature_bed_raw);
   #if ENABLED(TEMP_SENSOR_1_AS_REDUNDANT)
     redundant_temperature = Temperature::analog2temp(redundant_temperature_raw, 1);
@@ -939,15 +942,7 @@ void Temperature::init() {
   #endif
 
   // Finish init of mult hotend arrays
-  HOTEND_LOOP() {
-    // populate with the first value
-    maxttemp[e] = maxttemp[0];
-    #if ENABLED(PIDTEMP)
-      #if ENABLED(PID_EXTRUSION_SCALING)
-        last_e_position = 0;
-      #endif
-    #endif //PIDTEMP
-  }
+  HOTEND_LOOP() maxttemp[e] = maxttemp[0];
 
   #if ENABLED(PIDTEMP) && ENABLED(PID_EXTRUSION_SCALING)
     last_e_position = 0;
@@ -1092,17 +1087,17 @@ void Temperature::init() {
   delay(250);
 
   #define TEMP_MIN_ROUTINE(NR) \
-    minttemp[NR] = HEATER_ ## NR ## _MINTEMP; \
-    while(analog2temp(minttemp_raw[NR], NR) < HEATER_ ## NR ## _MINTEMP) { \
-      if (HEATER_ ## NR ## _RAW_LO_TEMP < HEATER_ ## NR ## _RAW_HI_TEMP) \
+    minttemp[NR] = HEATER_ ##NR## _MINTEMP; \
+    while(analog2temp(minttemp_raw[NR], NR) < HEATER_ ##NR## _MINTEMP) { \
+      if (HEATER_ ##NR## _RAW_LO_TEMP < HEATER_ ##NR## _RAW_HI_TEMP) \
         minttemp_raw[NR] += OVERSAMPLENR; \
       else \
         minttemp_raw[NR] -= OVERSAMPLENR; \
     }
   #define TEMP_MAX_ROUTINE(NR) \
-    maxttemp[NR] = HEATER_ ## NR ## _MAXTEMP; \
-    while(analog2temp(maxttemp_raw[NR], NR) > HEATER_ ## NR ## _MAXTEMP) { \
-      if (HEATER_ ## NR ## _RAW_LO_TEMP < HEATER_ ## NR ## _RAW_HI_TEMP) \
+    maxttemp[NR] = HEATER_ ##NR## _MAXTEMP; \
+    while(analog2temp(maxttemp_raw[NR], NR) > HEATER_ ##NR## _MAXTEMP) { \
+      if (HEATER_ ##NR## _RAW_LO_TEMP < HEATER_ ##NR## _RAW_HI_TEMP) \
         maxttemp_raw[NR] -= OVERSAMPLENR; \
       else \
         maxttemp_raw[NR] += OVERSAMPLENR; \
@@ -1261,7 +1256,7 @@ void Temperature::disable_all_heaters() {
   #define DISABLE_HEATER(NR) { \
     setTargetHotend(0, NR); \
     soft_pwm[NR] = 0; \
-    WRITE_HEATER_ ## NR (LOW); \
+    WRITE_HEATER_ ##NR (LOW); \
   }
 
   #if HAS_TEMP_HOTEND
@@ -1482,14 +1477,23 @@ void Temperature::set_current_temp_raw() {
  * in OCR0B above (128 or halfway between OVFs).
  *
  *  - Manage PWM to all the heaters and fan
- *  - Update the raw temperature values
- *  - Check new temperature values for MIN/MAX errors
+ *  - Prepare or Measure one of the raw ADC sensor values
+ *  - Check new temperature values for MIN/MAX errors (kill on error)
  *  - Step the babysteps value for each axis towards 0
+ *  - For PINS_DEBUGGING, monitor and report endstop pins
+ *  - For ENDSTOP_INTERRUPTS_FEATURE check endstops if flagged
  */
 ISR(TIMER0_COMPB_vect) { Temperature::isr(); }
 
+volatile bool Temperature::in_temp_isr = false;
+
 void Temperature::isr() {
-  //Allow UART and stepper ISRs
+  // The stepper ISR can interrupt this ISR. When it does it re-enables this ISR
+  // at the end of its run, potentially causing re-entry. This flag prevents it.
+  if (in_temp_isr) return;
+  in_temp_isr = true;
+  
+  // Allow UART and stepper ISRs
   CBI(TIMSK0, OCIE0B); //Disable Temperature ISR
   sei();
 
@@ -1533,37 +1537,37 @@ void Temperature::isr() {
      */
     if (pwm_count == 0) {
       soft_pwm_0 = soft_pwm[0];
-      WRITE_HEATER_0(soft_pwm_0 > 0 ? 1 : 0);
+      WRITE_HEATER_0(soft_pwm_0 > 0 ? HIGH : LOW);
       #if HOTENDS > 1
         soft_pwm_1 = soft_pwm[1];
-        WRITE_HEATER_1(soft_pwm_1 > 0 ? 1 : 0);
+        WRITE_HEATER_1(soft_pwm_1 > 0 ? HIGH : LOW);
         #if HOTENDS > 2
           soft_pwm_2 = soft_pwm[2];
-          WRITE_HEATER_2(soft_pwm_2 > 0 ? 1 : 0);
+          WRITE_HEATER_2(soft_pwm_2 > 0 ? HIGH : LOW);
           #if HOTENDS > 3
             soft_pwm_3 = soft_pwm[3];
-            WRITE_HEATER_3(soft_pwm_3 > 0 ? 1 : 0);
+            WRITE_HEATER_3(soft_pwm_3 > 0 ? HIGH : LOW);
           #endif
         #endif
       #endif
 
       #if HAS_HEATER_BED
         soft_pwm_BED = soft_pwm_bed;
-        WRITE_HEATER_BED(soft_pwm_BED > 0 ? 1 : 0);
+        WRITE_HEATER_BED(soft_pwm_BED > 0 ? HIGH : LOW);
       #endif
 
       #if ENABLED(FAN_SOFT_PWM)
         #if HAS_FAN0
           soft_pwm_fan[0] = fanSpeedSoftPwm[0] >> 1;
-          WRITE_FAN(soft_pwm_fan[0] > 0 ? 1 : 0);
+          WRITE_FAN(soft_pwm_fan[0] > 0 ? HIGH : LOW);
         #endif
         #if HAS_FAN1
           soft_pwm_fan[1] = fanSpeedSoftPwm[1] >> 1;
-          WRITE_FAN1(soft_pwm_fan[1] > 0 ? 1 : 0);
+          WRITE_FAN1(soft_pwm_fan[1] > 0 ? HIGH : LOW);
         #endif
         #if HAS_FAN2
           soft_pwm_fan[2] = fanSpeedSoftPwm[2] >> 1;
-          WRITE_FAN2(soft_pwm_fan[2] > 0 ? 1 : 0);
+          WRITE_FAN2(soft_pwm_fan[2] > 0 ? HIGH : LOW);
         #endif
       #endif
     }
@@ -1619,29 +1623,29 @@ void Temperature::isr() {
 
     // Macros for Slow PWM timer logic
     #define _SLOW_PWM_ROUTINE(NR, src) \
-      soft_pwm_ ## NR = src; \
-      if (soft_pwm_ ## NR > 0) { \
-        if (state_timer_heater_ ## NR == 0) { \
-          if (state_heater_ ## NR == 0) state_timer_heater_ ## NR = MIN_STATE_TIME; \
-          state_heater_ ## NR = 1; \
-          WRITE_HEATER_ ## NR(1); \
+      soft_pwm_ ##NR = src; \
+      if (soft_pwm_ ##NR > 0) { \
+        if (state_timer_heater_ ##NR == 0) { \
+          if (state_heater_ ##NR == 0) state_timer_heater_ ##NR = MIN_STATE_TIME; \
+          state_heater_ ##NR = 1; \
+          WRITE_HEATER_ ##NR(1); \
         } \
       } \
       else { \
-        if (state_timer_heater_ ## NR == 0) { \
-          if (state_heater_ ## NR == 1) state_timer_heater_ ## NR = MIN_STATE_TIME; \
-          state_heater_ ## NR = 0; \
-          WRITE_HEATER_ ## NR(0); \
+        if (state_timer_heater_ ##NR == 0) { \
+          if (state_heater_ ##NR == 1) state_timer_heater_ ##NR = MIN_STATE_TIME; \
+          state_heater_ ##NR = 0; \
+          WRITE_HEATER_ ##NR(0); \
         } \
       }
     #define SLOW_PWM_ROUTINE(n) _SLOW_PWM_ROUTINE(n, soft_pwm[n])
 
     #define PWM_OFF_ROUTINE(NR) \
-      if (soft_pwm_ ## NR < slow_pwm_count) { \
-        if (state_timer_heater_ ## NR == 0) { \
-          if (state_heater_ ## NR == 1) state_timer_heater_ ## NR = MIN_STATE_TIME; \
-          state_heater_ ## NR = 0; \
-          WRITE_HEATER_ ## NR (0); \
+      if (soft_pwm_ ##NR < slow_pwm_count) { \
+        if (state_timer_heater_ ##NR == 0) { \
+          if (state_heater_ ##NR == 1) state_timer_heater_ ##NR = MIN_STATE_TIME; \
+          state_heater_ ##NR = 0; \
+          WRITE_HEATER_ ##NR (0); \
         } \
       }
 
@@ -1681,15 +1685,15 @@ void Temperature::isr() {
       if (pwm_count == 0) {
         #if HAS_FAN0
           soft_pwm_fan[0] = fanSpeedSoftPwm[0] >> 1;
-          WRITE_FAN(soft_pwm_fan[0] > 0 ? 1 : 0);
+          WRITE_FAN(soft_pwm_fan[0] > 0 ? HIGH : LOW);
         #endif
         #if HAS_FAN1
           soft_pwm_fan[1] = fanSpeedSoftPwm[1] >> 1;
-          WRITE_FAN1(soft_pwm_fan[1] > 0 ? 1 : 0);
+          WRITE_FAN1(soft_pwm_fan[1] > 0 ? HIGH : LOW);
         #endif
         #if HAS_FAN2
           soft_pwm_fan[2] = fanSpeedSoftPwm[2] >> 1;
-          WRITE_FAN2(soft_pwm_fan[2] > 0 ? 1 : 0);
+          WRITE_FAN2(soft_pwm_fan[2] > 0 ? HIGH : LOW);
         #endif
       }
       #if HAS_FAN0
@@ -1944,5 +1948,17 @@ void Temperature::isr() {
     }
   #endif
 
+  #if ENABLED(ENDSTOP_INTERRUPTS_FEATURE)
+
+    extern volatile uint8_t e_hit;
+
+    if (e_hit && ENDSTOPS_ENABLED) {
+      endstops.update();  // call endstop update routine
+      e_hit--;
+    }
+  #endif
+
+  cli();
+  in_temp_isr = false;
   SBI(TIMSK0, OCIE0B); //re-enable Temperature ISR
 }

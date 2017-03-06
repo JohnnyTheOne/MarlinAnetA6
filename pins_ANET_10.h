@@ -24,14 +24,11 @@
  * Sanguinololu board pin assignments
  */
 
+#define BOARD_NAME "Anet"
 
-#ifndef BOARD_NAME
-  #define BOARD_NAME "Anet v1.0"
-#endif
-
-
+#if defined(__AVR_ATmega1284P__)
 #define LARGE_FLASH true
-
+#endif
 
 #define SANGUINOLOLU_V_1_2
 #include "pins_SANGUINOLOLU_11.h"
@@ -89,4 +86,5 @@
 	#endif
 
 #endif
+
 

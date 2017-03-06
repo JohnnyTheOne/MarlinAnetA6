@@ -33,6 +33,9 @@
 #ifndef WELCOME_MSG
   #define WELCOME_MSG                         MACHINE_NAME _UxGT(" ready.")
 #endif
+#ifndef MSG_BACK
+  #define MSG_BACK                            _UxGT("Back")
+#endif
 #ifndef MSG_SD_INSERTED
   #define MSG_SD_INSERTED                     _UxGT("Card inserted")
 #endif
@@ -50,6 +53,12 @@
 #endif
 #ifndef MSG_DISABLE_STEPPERS
   #define MSG_DISABLE_STEPPERS                _UxGT("Disable steppers")
+#endif
+#ifndef MSG_DEBUG_MENU
+  #define MSG_DEBUG_MENU                      _UxGT("Debug Menu")
+#endif
+#ifndef MSG_PROGRESS_BAR_TEST
+  #define MSG_PROGRESS_BAR_TEST               _UxGT("Progress Bar Test")
 #endif
 #ifndef MSG_AUTO_HOME
   #define MSG_AUTO_HOME                       _UxGT("Auto home")
@@ -96,6 +105,9 @@
 #ifndef MSG_PREHEAT_1_ALL
   #define MSG_PREHEAT_1_ALL                   MSG_PREHEAT_1 _UxGT(" All")
 #endif
+#ifndef MSG_PREHEAT_1_END
+  #define MSG_PREHEAT_1_END                   MSG_PREHEAT_1 _UxGT(" End")
+#endif
 #ifndef MSG_PREHEAT_1_BEDONLY
   #define MSG_PREHEAT_1_BEDONLY               MSG_PREHEAT_1 _UxGT(" Bed")
 #endif
@@ -110,6 +122,9 @@
 #endif
 #ifndef MSG_PREHEAT_2_ALL
   #define MSG_PREHEAT_2_ALL                   MSG_PREHEAT_2 _UxGT(" All")
+#endif
+#ifndef MSG_PREHEAT_2_END
+  #define MSG_PREHEAT_2_END                   MSG_PREHEAT_2 _UxGT(" End")
 #endif
 #ifndef MSG_PREHEAT_2_BEDONLY
   #define MSG_PREHEAT_2_BEDONLY               MSG_PREHEAT_2 _UxGT(" Bed")
@@ -139,10 +154,10 @@
   #define MSG_LEVEL_BED                       _UxGT("Level bed")
 #endif
 #ifndef MSG_MOVING
-  #define MSG_MOVING                          "Moving..."
+  #define MSG_MOVING                          _UxGT("Moving...")
 #endif
 #ifndef MSG_FREE_XY
-  #define MSG_FREE_XY                         "Free XY"
+  #define MSG_FREE_XY                         _UxGT("Free XY")
 #endif
 #ifndef MSG_MOVE_X
   #define MSG_MOVE_X                          _UxGT("Move X")
@@ -364,10 +379,10 @@
   #define MSG_CONTROL_RETRACT_ZLIFT           _UxGT("Hop mm")
 #endif
 #ifndef MSG_CONTROL_RETRACT_RECOVER
-  #define MSG_CONTROL_RETRACT_RECOVER         _UxGT("UnRet +mm")
+  #define MSG_CONTROL_RETRACT_RECOVER         _UxGT("UnRet mm")
 #endif
 #ifndef MSG_CONTROL_RETRACT_RECOVER_SWAP
-  #define MSG_CONTROL_RETRACT_RECOVER_SWAP    _UxGT("S UnRet+mm")
+  #define MSG_CONTROL_RETRACT_RECOVER_SWAP    _UxGT("S UnRet mm")
 #endif
 #ifndef MSG_CONTROL_RETRACT_RECOVERF
   #define MSG_CONTROL_RETRACT_RECOVERF        _UxGT("UnRet  V")
@@ -480,7 +495,6 @@
 #ifndef MSG_DELTA_CALIBRATE_CENTER
   #define MSG_DELTA_CALIBRATE_CENTER          _UxGT("Calibrate Center")
 #endif
-
 #ifndef MSG_INFO_MENU
   #define MSG_INFO_MENU                       _UxGT("About Printer")
 #endif
@@ -577,6 +591,12 @@
 #ifndef MSG_FILAMENT_CHANGE_OPTION_RESUME
   #define MSG_FILAMENT_CHANGE_OPTION_RESUME   _UxGT("Resume print")
 #endif
+#ifndef MSG_FILAMENT_CHANGE_MINTEMP
+  #define MSG_FILAMENT_CHANGE_MINTEMP         _UxGT("Minimum Temp is ")
+#endif
+#ifndef MSG_FILAMENT_CHANGE_NOZZLE
+  #define MSG_FILAMENT_CHANGE_NOZZLE          _UxGT("  Nozzle: ")
+#endif
 
 //
 // Filament Change screens show up to 3 lines on a 4-line display
@@ -596,6 +616,14 @@
     #define MSG_FILAMENT_CHANGE_INSERT_1        _UxGT("Insert filament")
     #define MSG_FILAMENT_CHANGE_INSERT_2        _UxGT("and press button")
     #define MSG_FILAMENT_CHANGE_INSERT_3        _UxGT("to continue...")
+  #endif
+  #ifndef MSG_FILAMENT_CHANGE_HEAT_1
+    #define MSG_FILAMENT_CHANGE_HEAT_1          _UxGT("Press button to")
+    #define MSG_FILAMENT_CHANGE_HEAT_2          _UxGT("heat nozzle.")
+  #endif
+  #ifndef MSG_FILAMENT_CHANGE_HEATING_1
+    #define MSG_FILAMENT_CHANGE_HEATING_1       _UxGT("Heating nozzle")
+    #define MSG_FILAMENT_CHANGE_HEATING_2       _UxGT("Please wait...")
   #endif
   #ifndef MSG_FILAMENT_CHANGE_LOAD_1
     #define MSG_FILAMENT_CHANGE_LOAD_1          _UxGT("Wait for")
@@ -618,6 +646,9 @@
   #endif
   #ifndef MSG_FILAMENT_CHANGE_INSERT_1
     #define MSG_FILAMENT_CHANGE_INSERT_1        _UxGT("Insert and Click")
+  #endif
+  #ifndef MSG_FILAMENT_CHANGE_HEATING_1
+    #define MSG_FILAMENT_CHANGE_HEATING_1       _UxGT("Heating...")
   #endif
   #ifndef MSG_FILAMENT_CHANGE_LOAD_1
     #define MSG_FILAMENT_CHANGE_LOAD_1          _UxGT("Loading...")

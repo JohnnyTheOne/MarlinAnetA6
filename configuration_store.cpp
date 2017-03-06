@@ -145,7 +145,6 @@
 #endif
 
 #if ENABLED(ABL_BILINEAR_SUBDIVISION)
-  extern void bed_level_virt_prepare();
   extern void bed_level_virt_interpolate();
 #endif
 
@@ -172,8 +171,10 @@ void Config_Postprocess() {
 
   calculate_volumetric_multipliers();
 
-  // Software endstops depend on home_offset
-  LOOP_XYZ(i) update_software_endstops((AxisEnum)i);
+  #if DISABLED(NO_WORKSPACE_OFFSETS) || ENABLED(DUAL_X_CARRIAGE) || ENABLED(DELTA)
+    // Software endstops depend on home_offset
+    LOOP_XYZ(i) update_software_endstops((AxisEnum)i);
+  #endif
 }
 
 #if ENABLED(EEPROM_SETTINGS)
@@ -183,7 +184,7 @@ void Config_Postprocess() {
 
   bool eeprom_write_error;
 
-  void _EEPROM_writeData(int &pos, uint8_t* value, uint8_t size) {
+  void _EEPROM_writeData(int &pos, const uint8_t* value, uint16_t size) {
     if (eeprom_write_error) return;
     while (size--) {
       uint8_t * const p = (uint8_t * const)pos;
@@ -205,7 +206,7 @@ void Config_Postprocess() {
     };
   }
   bool eeprom_read_error;
-  void _EEPROM_readData(int &pos, uint8_t* value, uint8_t size) {
+  void _EEPROM_readData(int &pos, uint8_t* value, uint16_t size) {
     do {
       uint8_t c = eeprom_read_byte((unsigned char*)pos);
       if (!eeprom_read_error) *value = c;
@@ -238,8 +239,9 @@ void Config_Postprocess() {
 
     eeprom_checksum = 0; // clear before first "real data"
 
-    const uint8_t esteppers = E_STEPPERS;
+    const uint8_t esteppers = COUNT(planner.axis_steps_per_mm) - XYZ;
     EEPROM_WRITE(esteppers);
+
     EEPROM_WRITE(planner.axis_steps_per_mm);
     EEPROM_WRITE(planner.max_feedrate_mm_s);
     EEPROM_WRITE(planner.max_acceleration_mm_per_s2);
@@ -251,6 +253,9 @@ void Config_Postprocess() {
     EEPROM_WRITE(planner.min_travel_feedrate_mm_s);
     EEPROM_WRITE(planner.min_segment_time);
     EEPROM_WRITE(planner.max_jerk);
+    #if ENABLED(NO_WORKSPACE_OFFSETS)
+      float home_offset[XYZ] = { 0 };
+    #endif
     EEPROM_WRITE(home_offset);
 
     #if HOTENDS > 1
@@ -439,7 +444,7 @@ void Config_Postprocess() {
 
       // Report storage size
       SERIAL_ECHO_START;
-      SERIAL_ECHOPAIR("Settings Stored (", eeprom_size);
+      SERIAL_ECHOPAIR("Settings Stored (", eeprom_size - (EEPROM_OFFSET));
       SERIAL_ECHOLNPGM(" bytes)");
     }
   }
@@ -458,13 +463,16 @@ void Config_Postprocess() {
     uint16_t stored_checksum;
     EEPROM_READ(stored_checksum);
 
-    //  SERIAL_ECHOPAIR("Version: [", version);
-    //  SERIAL_ECHOPAIR("] Stored version: [", stored_ver);
-    //  SERIAL_CHAR(']');
-    //  SERIAL_EOL;
-
     // Version has to match or defaults are used
     if (strncmp(version, stored_ver, 3) != 0) {
+      if (stored_ver[0] != 'V') {
+        stored_ver[0] = '?';
+        stored_ver[1] = '\0';
+      }
+      SERIAL_ECHO_START;
+      SERIAL_ECHOPGM("EEPROM version mismatch ");
+      SERIAL_ECHOPAIR("(EEPROM=", stored_ver);
+      SERIAL_ECHOLNPGM(" Marlin=" EEPROM_VERSION ")");
       Config_ResetDefault();
     }
     else {
@@ -498,6 +506,10 @@ void Config_Postprocess() {
       EEPROM_READ(planner.min_travel_feedrate_mm_s);
       EEPROM_READ(planner.min_segment_time);
       EEPROM_READ(planner.max_jerk);
+
+      #if ENABLED(NO_WORKSPACE_OFFSETS)
+        float home_offset[XYZ];
+      #endif
       EEPROM_READ(home_offset);
 
       #if HOTENDS > 1
@@ -563,7 +575,6 @@ void Config_Postprocess() {
           EEPROM_READ(bilinear_start);               // 2 ints
           EEPROM_READ(bed_level_grid);               // 9 to 256 floats
           #if ENABLED(ABL_BILINEAR_SUBDIVISION)
-            bed_level_virt_prepare();
             bed_level_virt_interpolate();
           #endif
           //set_bed_leveling_enabled(leveling_is_on);
@@ -680,7 +691,7 @@ void Config_Postprocess() {
           Config_Postprocess();
           SERIAL_ECHO_START;
           SERIAL_ECHO(version);
-          SERIAL_ECHOPAIR(" stored settings retrieved (", eeprom_index);
+          SERIAL_ECHOPAIR(" stored settings retrieved (", eeprom_index - (EEPROM_OFFSET));
           SERIAL_ECHOLNPGM(" bytes)");
         }
       }
@@ -727,7 +738,9 @@ void Config_ResetDefault() {
   planner.max_jerk[Y_AXIS] = DEFAULT_YJERK;
   planner.max_jerk[Z_AXIS] = DEFAULT_ZJERK;
   planner.max_jerk[E_AXIS] = DEFAULT_EJERK;
-  home_offset[X_AXIS] = home_offset[Y_AXIS] = home_offset[Z_AXIS] = 0;
+  #if DISABLED(NO_WORKSPACE_OFFSETS)
+    ZERO(home_offset);
+  #endif
 
   #if HOTENDS > 1
     constexpr float tmp4[XYZ][HOTENDS] = {
@@ -786,8 +799,6 @@ void Config_ResetDefault() {
   #if ENABLED(PIDTEMP)
     #if ENABLED(PID_PARAMS_PER_HOTEND) && HOTENDS > 1
       HOTEND_LOOP()
-    #else
-      int e = 0; UNUSED(e); // only need to write once
     #endif
     {
       PID_PARAM(Kp, e) = DEFAULT_Kp;
@@ -823,7 +834,13 @@ void Config_ResetDefault() {
     retract_recover_feedrate_mm_s = RETRACT_RECOVER_FEEDRATE;
   #endif
 
-  volumetric_enabled = false;
+  volumetric_enabled =
+  #if ENABLED(VOLUMETRIC_DEFAULT_ON)
+    true
+  #else
+    false
+  #endif
+  ;
   for (uint8_t q = 0; q < COUNT(filament_size); q++)
     filament_size[q] = DEFAULT_NOMINAL_FILAMENT_DIA;
 
@@ -934,15 +951,17 @@ void Config_ResetDefault() {
     SERIAL_ECHOPAIR(" E", planner.max_jerk[E_AXIS]);
     SERIAL_EOL;
 
-    CONFIG_ECHO_START;
-    if (!forReplay) {
-      SERIAL_ECHOLNPGM("Home offset (mm)");
+    #if DISABLED(NO_WORKSPACE_OFFSETS)
       CONFIG_ECHO_START;
-    }
-    SERIAL_ECHOPAIR("  M206 X", home_offset[X_AXIS]);
-    SERIAL_ECHOPAIR(" Y", home_offset[Y_AXIS]);
-    SERIAL_ECHOPAIR(" Z", home_offset[Z_AXIS]);
-    SERIAL_EOL;
+      if (!forReplay) {
+        SERIAL_ECHOLNPGM("Home offset (mm)");
+        CONFIG_ECHO_START;
+      }
+      SERIAL_ECHOPAIR("  M206 X", home_offset[X_AXIS]);
+      SERIAL_ECHOPAIR(" Y", home_offset[Y_AXIS]);
+      SERIAL_ECHOPAIR(" Z", home_offset[Z_AXIS]);
+      SERIAL_EOL;
+    #endif
 
     #if HOTENDS > 1
       CONFIG_ECHO_START;
