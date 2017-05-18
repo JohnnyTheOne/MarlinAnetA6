@@ -34,10 +34,10 @@
 #endif
 
 /**
- * We try our best to include sanity checks for all the changes configuration
- * directives because people have a tendency to use outdated config files with
- * the bleding edge source code, but sometimes this is not enough. This check
- * will force a minimum config file revision, otherwise Marlin will not build.
+ * We try our best to include sanity checks for all changed configuration
+ * directives because users have a tendency to use outdated config files with
+ * the bleeding-edge source code, but sometimes this is not enough. This check
+ * forces a minimum config file revision. Otherwise Marlin will not build.
  */
 #if ! defined(CONFIGURATION_H_VERSION) || CONFIGURATION_H_VERSION < REQUIRED_CONFIGURATION_H_VERSION
   #error "You are using an old Configuration.h file, update it before building Marlin."
@@ -77,7 +77,7 @@
 #elif defined(DISABLE_MAX_ENDSTOPS) || defined(DISABLE_MIN_ENDSTOPS)
   #error "DISABLE_MAX_ENDSTOPS and DISABLE_MIN_ENDSTOPS deprecated. Use individual USE_*_PLUG options instead."
 #elif ENABLED(Z_DUAL_ENDSTOPS) && !defined(Z2_USE_ENDSTOP)
-  #error "Z_DUAL_ENDSTOPS settings are simplified. Just set Z2_USE_ENDSTOP to the endstop you want to repurpose for Z2"
+  #error "Z_DUAL_ENDSTOPS settings are simplified. Just set Z2_USE_ENDSTOP to the endstop you want to repurpose for Z2."
 #elif defined(LANGUAGE_INCLUDE)
   #error "LANGUAGE_INCLUDE has been replaced by LCD_LANGUAGE. Please update your configuration."
 #elif defined(EXTRUDER_OFFSET_X) || defined(EXTRUDER_OFFSET_Y)
@@ -130,6 +130,12 @@
   #error "Z_RAISE_PROBE_DEPLOY_STOW and Z_RAISE_BETWEEN_PROBINGS are now Z_CLEARANCE_DEPLOY_PROBE and Z_CLEARANCE_BETWEEN_PROBES. Please update your configuration."
 #elif defined(Z_PROBE_DEPLOY_HEIGHT) || defined(Z_PROBE_TRAVEL_HEIGHT)
   #error "Z_PROBE_DEPLOY_HEIGHT and Z_PROBE_TRAVEL_HEIGHT are now Z_CLEARANCE_DEPLOY_PROBE and Z_CLEARANCE_BETWEEN_PROBES. Please update your configuration."
+#elif defined(MANUAL_BED_LEVELING)
+  #error "MANUAL_BED_LEVELING is now LCD_BED_LEVELING. Please update your configuration."
+#elif defined(MESH_HOME_SEARCH_Z)
+  #error "MESH_HOME_SEARCH_Z is now LCD_PROBE_Z_RANGE. Please update your configuration."
+#elif defined(MANUAL_PROBE_Z_RANGE)
+  #error "MANUAL_PROBE_Z_RANGE is now LCD_PROBE_Z_RANGE. Please update your configuration."
 #elif !defined(MIN_STEPS_PER_SEGMENT)
   #error Please replace "const int dropsegments" with "#define MIN_STEPS_PER_SEGMENT" (and increase by 1) in Configuration_adv.h.
 #elif defined(PREVENT_DANGEROUS_EXTRUDE)
@@ -141,9 +147,17 @@
 #elif defined(AUTO_BED_LEVELING_FEATURE)
   #error "AUTO_BED_LEVELING_FEATURE is deprecated. Specify AUTO_BED_LEVELING_LINEAR, AUTO_BED_LEVELING_BILINEAR, or AUTO_BED_LEVELING_3POINT."
 #elif defined(ABL_GRID_POINTS)
-  #error "ABL_GRID_POINTS is now ABL_GRID_MAX_POINTS_X and ABL_GRID_MAX_POINTS_Y. Please update your configuration."
+  #error "ABL_GRID_POINTS is now GRID_MAX_POINTS_X and GRID_MAX_POINTS_Y. Please update your configuration."
 #elif defined(ABL_GRID_POINTS_X) || defined(ABL_GRID_POINTS_Y)
-  #error "ABL_GRID_POINTS_[XY] is now ABL_GRID_MAX_POINTS_[XY]. Please update your configuration."
+  #error "ABL_GRID_POINTS_[XY] is now GRID_MAX_POINTS_[XY]. Please update your configuration."
+#elif defined(ABL_GRID_MAX_POINTS_X) || defined(ABL_GRID_MAX_POINTS_Y)
+  #error "ABL_GRID_MAX_POINTS_[XY] is now GRID_MAX_POINTS_[XY]. Please update your configuration."
+#elif defined(MESH_NUM_X_POINTS) || defined(MESH_NUM_Y_POINTS)
+  #error "MESH_NUM_[XY]_POINTS is now GRID_MAX_POINTS_[XY]. Please update your configuration."
+#elif defined(UBL_MESH_NUM_X_POINTS) || defined(UBL_MESH_NUM_Y_POINTS)
+  #error "UBL_MESH_NUM_[XY]_POINTS is now GRID_MAX_POINTS_[XY]. Please update your configuration."
+#elif defined(UBL_MESH_EDIT_ENABLED)
+  #error "UBL_MESH_EDIT_ENABLED is now UBL_G26_MESH_EDITING. Please update your configuration."
 #elif defined(BEEPER)
   #error "BEEPER is now BEEPER_PIN. Please update your pins definitions."
 #elif defined(SDCARDDETECT)
@@ -156,6 +170,12 @@
   #error "LCD_PIN_RESET is now LCD_RESET_PIN. Please update your pins definitions."
 #elif defined(EXTRUDER_0_AUTO_FAN_PIN) || defined(EXTRUDER_1_AUTO_FAN_PIN) || defined(EXTRUDER_2_AUTO_FAN_PIN) || defined(EXTRUDER_3_AUTO_FAN_PIN)
   #error "EXTRUDER_[0123]_AUTO_FAN_PIN is now E[0123]_AUTO_FAN_PIN. Please update your Configuration_adv.h."
+#elif defined(min_software_endstops) || defined(max_software_endstops)
+  #error "(min|max)_software_endstops are now (MIN|MAX)_SOFTWARE_ENDSTOPS. Please update your configuration."
+#elif ENABLED(Z_PROBE_SLED) && defined(SLED_PIN)
+  #error "Replace SLED_PIN with SOL1_PIN (applies to both Z_PROBE_SLED and SOLENOID_PROBE)."
+#elif defined(CONTROLLERFAN_PIN)
+  #error "CONTROLLERFAN_PIN is now CONTROLLER_FAN_PIN, enabled with USE_CONTROLLER_FAN. Please update your Configuration_adv.h."
 #endif
 
 /**
@@ -228,12 +248,13 @@
 #if ENABLED(DELTA)
   #if DISABLED(USE_XMAX_PLUG) && DISABLED(USE_YMAX_PLUG) && DISABLED(USE_ZMAX_PLUG)
     #error "You probably want to use Max Endstops for DELTA!"
-  #endif
-  #if ABL_GRID
-    #if (ABL_GRID_MAX_POINTS_X & 1) == 0 || (ABL_GRID_MAX_POINTS_Y & 1) == 0
-      #error "DELTA requires ABL_GRID_MAX_POINTS_X and ABL_GRID_MAX_POINTS_Y to be odd numbers."
-    #elif ABL_GRID_MAX_POINTS_X < 3
-      #error "DELTA requires ABL_GRID_MAX_POINTS_X and ABL_GRID_MAX_POINTS_Y to be 3 or higher."
+  #elif ENABLED(ENABLE_LEVELING_FADE_HEIGHT) && DISABLED(AUTO_BED_LEVELING_BILINEAR) && !UBL_DELTA
+    #error "ENABLE_LEVELING_FADE_HEIGHT on DELTA requires AUTO_BED_LEVELING_BILINEAR or AUTO_BED_LEVELING_UBL."
+  #elif ABL_GRID
+    #if (GRID_MAX_POINTS_X & 1) == 0 || (GRID_MAX_POINTS_Y & 1) == 0
+      #error "DELTA requires GRID_MAX_POINTS_X and GRID_MAX_POINTS_Y to be odd numbers."
+    #elif GRID_MAX_POINTS_X < 3
+      #error "DELTA requires GRID_MAX_POINTS_X and GRID_MAX_POINTS_Y to be 3 or higher."
     #endif
   #endif
 #endif
@@ -244,12 +265,12 @@
 #if ENABLED(BABYSTEPPING)
   #if DISABLED(ULTRA_LCD)
     #error "BABYSTEPPING requires an LCD controller."
-  #endif
-  #if ENABLED(SCARA)
+  #elif ENABLED(SCARA)
     #error "BABYSTEPPING is not implemented for SCARA yet."
-  #endif
-  #if ENABLED(DELTA) && ENABLED(BABYSTEP_XY)
+  #elif ENABLED(DELTA) && ENABLED(BABYSTEP_XY)
     #error "BABYSTEPPING only implemented for Z axis on deltabots."
+  #elif ENABLED(BABYSTEP_ZPROBE_OFFSET) && !HAS_BED_PROBE
+    #error "BABYSTEP_ZPROBE_OFFSET requires a probe."
   #endif
 #endif
 
@@ -274,6 +295,8 @@
     #error "FILAMENT_CHANGE_FEATURE currently requires an LCD controller."
   #elif ENABLED(EXTRUDER_RUNOUT_PREVENT)
     #error "EXTRUDER_RUNOUT_PREVENT is incompatible with FILAMENT_CHANGE_FEATURE."
+  #elif ENABLED(PARK_HEAD_ON_PAUSE) && DISABLED(SDSUPPORT) && DISABLED(ULTIPANEL) && DISABLED(EMERGENCY_PARSER)
+    #error "PARK_HEAD_ON_PAUSE requires SDSUPPORT, EMERGENCY_PARSER, or an LCD controller."
   #endif
 #endif
 
@@ -289,8 +312,8 @@
  */
 #if EXTRUDERS > 1
 
-  #if EXTRUDERS > 4
-    #error "The maximum number of EXTRUDERS in Marlin is 4."
+  #if EXTRUDERS > 5
+    #error "Marlin supports a maximum of 5 EXTRUDERS."
   #endif
 
   #if ENABLED(TEMP_SENSOR_1_AS_REDUNDANT)
@@ -306,11 +329,16 @@
 #endif
 
 /**
- * Only one type of extruder allowed
+ * A dual nozzle x-carriage with switching servo
  */
-#if (ENABLED(SWITCHING_EXTRUDER) && (ENABLED(SINGLENOZZLE) || ENABLED(MIXING_EXTRUDER))) \
-  || (ENABLED(SINGLENOZZLE) && ENABLED(MIXING_EXTRUDER))
-    #error "Please define only one type of extruder: SINGLENOZZLE, SWITCHING_EXTRUDER, or MIXING_EXTRUDER."
+#if ENABLED(SWITCHING_NOZZLE)
+  #if ENABLED(SINGLENOZZLE)
+    #error "SWITCHING_NOZZLE and SINGLENOZZLE are incompatible."
+  #elif EXTRUDERS < 2
+    #error "SWITCHING_NOZZLE requires exactly 2 EXTRUDERS."
+  #elif NUM_SERVOS < 1
+    #error "SWITCHING_NOZZLE requires NUM_SERVOS >= 1."
+  #endif
 #endif
 
 /**
@@ -332,12 +360,14 @@
 #if ENABLED(MIXING_EXTRUDER)
   #if EXTRUDERS > 1
     #error "MIXING_EXTRUDER currently only supports one extruder."
-  #endif
-  #if MIXING_STEPPERS < 2
+  #elif MIXING_STEPPERS < 2
     #error "You must set MIXING_STEPPERS >= 2 for a mixing extruder."
-  #endif
-  #if ENABLED(FILAMENT_SENSOR)
+  #elif ENABLED(FILAMENT_SENSOR)
     #error "MIXING_EXTRUDER is incompatible with FILAMENT_SENSOR. Comment out this line to use it anyway."
+  #elif ENABLED(SWITCHING_EXTRUDER)
+    #error "Please select either MIXING_EXTRUDER or SWITCHING_EXTRUDER, not both."
+  #elif ENABLED(SINGLENOZZLE)
+    #error "MIXING_EXTRUDER is incompatible with SINGLENOZZLE."
   #endif
 #endif
 
@@ -372,32 +402,24 @@
 /**
  * Allow only one bed leveling option to be defined
  */
-#if HAS_ABL
-  #define COUNT_LEV_1 0
+static_assert(1 >= 0
   #if ENABLED(AUTO_BED_LEVELING_LINEAR)
-    #define COUNT_LEV_2 INCREMENT(COUNT_LEV_1)
-  #else
-    #define COUNT_LEV_2 COUNT_LEV_1
+    + 1
   #endif
   #if ENABLED(AUTO_BED_LEVELING_3POINT)
-    #define COUNT_LEV_3 INCREMENT(COUNT_LEV_2)
-  #else
-    #define COUNT_LEV_3 COUNT_LEV_2
+    + 1
   #endif
   #if ENABLED(AUTO_BED_LEVELING_BILINEAR)
-    #define COUNT_LEV_4 INCREMENT(COUNT_LEV_3)
-  #else
-    #define COUNT_LEV_4 COUNT_LEV_3
+    + 1
+  #endif
+  #if ENABLED(AUTO_BED_LEVELING_UBL)
+    + 1
   #endif
   #if ENABLED(MESH_BED_LEVELING)
-    #define COUNT_LEV_5 INCREMENT(COUNT_LEV_4)
-  #else
-    #define COUNT_LEV_5 COUNT_LEV_4
+    + 1
   #endif
-  #if COUNT_LEV_5 > 1
-    #error "Select only one of: MESH_BED_LEVELING, AUTO_BED_LEVELING_LINEAR, AUTO_BED_LEVELING_3POINT, or AUTO_BED_LEVELING_BILINEAR."
-  #endif
-#endif
+  , "Select only one of: MESH_BED_LEVELING, AUTO_BED_LEVELING_LINEAR, AUTO_BED_LEVELING_3POINT, AUTO_BED_LEVELING_BILINEAR or AUTO_BED_LEVELING_UBL."
+);
 
 /**
  * Mesh Bed Leveling
@@ -405,56 +427,73 @@
 #if ENABLED(MESH_BED_LEVELING)
   #if ENABLED(DELTA)
     #error "MESH_BED_LEVELING does not yet support DELTA printers."
-  #elif MESH_NUM_X_POINTS > 9 || MESH_NUM_Y_POINTS > 9
-    #error "MESH_NUM_X_POINTS and MESH_NUM_Y_POINTS must be less than 10."
+  #elif GRID_MAX_POINTS_X > 9 || GRID_MAX_POINTS_Y > 9
+    #error "GRID_MAX_POINTS_X and GRID_MAX_POINTS_Y must be less than 10 for MBL."
   #endif
-#elif ENABLED(MANUAL_BED_LEVELING)
-  #error "MANUAL_BED_LEVELING only applies to MESH_BED_LEVELING."
+#endif
+
+/**
+ * Unified Bed Leveling
+ */
+#if ENABLED(AUTO_BED_LEVELING_UBL)
+  #if IS_SCARA
+    #error "AUTO_BED_LEVELING_UBL does not yet support SCARA printers."
+  #elif DISABLED(NEWPANEL)
+    #error "AUTO_BED_LEVELING_UBL requires an LCD controller."
+  #endif
 #endif
 
 /**
  * Probes
  */
-#if PROBE_SELECTED
 
-  /**
-   * Allow only one probe option to be defined
-   */
-  #define COUNT_PROBE_1 0
+/**
+ * Allow only one probe option to be defined
+ */
+static_assert(1 >= 0
+  #if ENABLED(PROBE_MANUALLY)
+    + 1
+  #endif
   #if ENABLED(FIX_MOUNTED_PROBE)
-    #define COUNT_PROBE_2 INCREMENT(COUNT_PROBE_1)
-  #else
-    #define COUNT_PROBE_2 COUNT_PROBE_1
+    + 1
   #endif
   #if HAS_Z_SERVO_ENDSTOP && DISABLED(BLTOUCH)
-    #define COUNT_PROBE_3 INCREMENT(COUNT_PROBE_2)
-  #else
-    #define COUNT_PROBE_3 COUNT_PROBE_2
+    + 1
   #endif
   #if ENABLED(BLTOUCH)
-    #define COUNT_PROBE_4 INCREMENT(COUNT_PROBE_3)
-  #else
-    #define COUNT_PROBE_4 COUNT_PROBE_3
+    + 1
   #endif
   #if ENABLED(Z_PROBE_ALLEN_KEY)
-    #define COUNT_PROBE_5 INCREMENT(COUNT_PROBE_4)
-  #else
-    #define COUNT_PROBE_5 COUNT_PROBE_4
+    + 1
   #endif
   #if ENABLED(Z_PROBE_SLED)
-    #define COUNT_PROBE_6 INCREMENT(COUNT_PROBE_5)
-  #else
-    #define COUNT_PROBE_6 COUNT_PROBE_5
+    + 1
   #endif
-  #if COUNT_PROBE_6 > 1
-    #error "Please enable only one probe: FIX_MOUNTED_PROBE, Z Servo, BLTOUCH, Z_PROBE_ALLEN_KEY, or Z_PROBE_SLED."
+  #if ENABLED(SOLENOID_PROBE)
+    + 1
   #endif
+  , "Please enable only one probe: PROBE_MANUALLY, FIX_MOUNTED_PROBE, Z Servo, BLTOUCH, Z_PROBE_ALLEN_KEY, or Z_PROBE_SLED."
+);
+
+
+#if PROBE_SELECTED
 
   /**
    * Z_PROBE_SLED is incompatible with DELTA
    */
   #if ENABLED(Z_PROBE_SLED) && ENABLED(DELTA)
     #error "You cannot use Z_PROBE_SLED with DELTA."
+  #endif
+
+  /**
+   * SOLENOID_PROBE requirements
+   */
+  #if ENABLED(SOLENOID_PROBE)
+    #if ENABLED(EXT_SOLENOID)
+      #error "SOLENOID_PROBE is incompatible with EXT_SOLENOID."
+    #elif !HAS_SOLENOID_1
+      #error "SOLENOID_PROBE requires SOL1_PIN. It can be added to your Configuration.h."
+    #endif
   #endif
 
   /**
@@ -485,7 +524,7 @@
     #if !HAS_Z_MIN_PROBE_PIN
       #error "Z_MIN_PROBE_ENDSTOP requires the Z_MIN_PROBE_PIN to be defined."
     #endif
-  #else
+  #elif DISABLED(PROBE_MANUALLY)
     #error "You must enable either Z_MIN_PROBE_ENDSTOP or Z_MIN_PROBE_USES_Z_MIN_ENDSTOP_PIN to use a probe."
   #endif
 
@@ -516,6 +555,13 @@
 #endif
 
 /**
+ * LCD_BED_LEVELING requirements
+ */
+#if ENABLED(LCD_BED_LEVELING) && DISABLED(MESH_BED_LEVELING) && !(HAS_ABL && ENABLED(PROBE_MANUALLY))
+  #error "LCD_BED_LEVELING requires MESH_BED_LEVELING or PROBE_MANUALLY."
+#endif
+
+/**
  * Homing Bump
  */
 #if X_HOME_BUMP_MM < 0 || Y_HOME_BUMP_MM < 0 || Z_HOME_BUMP_MM < 0
@@ -526,13 +572,13 @@
  * Make sure Z_SAFE_HOMING point is reachable
  */
 #if ENABLED(Z_SAFE_HOMING)
-  #if Z_SAFE_HOMING_X_POINT < MIN_PROBE_X || Z_SAFE_HOMING_X_POINT > MAX_PROBE_X
+  #if !WITHIN(Z_SAFE_HOMING_X_POINT, MIN_PROBE_X, MAX_PROBE_X)
     #if HAS_BED_PROBE
       #error "Z_SAFE_HOMING_X_POINT can't be reached by the Z probe."
     #else
       #error "Z_SAFE_HOMING_X_POINT can't be reached by the nozzle."
     #endif
-  #elif Z_SAFE_HOMING_Y_POINT < MIN_PROBE_Y || Z_SAFE_HOMING_Y_POINT > MAX_PROBE_Y
+  #elif !WITHIN(Z_SAFE_HOMING_Y_POINT, MIN_PROBE_Y, MAX_PROBE_Y)
     #if HAS_BED_PROBE
       #error "Z_SAFE_HOMING_Y_POINT can't be reached by the Z probe."
     #else
@@ -553,26 +599,20 @@
   /**
    * Delta and SCARA have limited bed leveling options
    */
-  #if DISABLED(AUTO_BED_LEVELING_BILINEAR)
-    #if ENABLED(DELTA)
-      #error "Only AUTO_BED_LEVELING_BILINEAR is supported for DELTA bed leveling."
-    #elif ENABLED(SCARA)
-      #error "Only AUTO_BED_LEVELING_BILINEAR is supported for SCARA bed leveling."
-    #endif
+  #if IS_SCARA && DISABLED(AUTO_BED_LEVELING_BILINEAR)
+    #error "Only AUTO_BED_LEVELING_BILINEAR currently supports SCARA bed leveling."
   #endif
 
   /**
-   * Check if Probe_Offset * Grid Points is greater than Probing Range
+   * Check auto bed leveling sub-options, especially probe points
    */
   #if ABL_GRID
     #ifndef DELTA_PROBEABLE_RADIUS
-      // Be sure points are in the right order
       #if LEFT_PROBE_BED_POSITION > RIGHT_PROBE_BED_POSITION
         #error "LEFT_PROBE_BED_POSITION must be less than RIGHT_PROBE_BED_POSITION."
       #elif FRONT_PROBE_BED_POSITION > BACK_PROBE_BED_POSITION
         #error "FRONT_PROBE_BED_POSITION must be less than BACK_PROBE_BED_POSITION."
       #endif
-      // Make sure probing points are reachable
       #if LEFT_PROBE_BED_POSITION < MIN_PROBE_X
         #error "The given LEFT_PROBE_BED_POSITION can't be reached by the Z probe."
       #elif RIGHT_PROBE_BED_POSITION > MAX_PROBE_X
@@ -583,24 +623,44 @@
         #error "The given BACK_PROBE_BED_POSITION can't be reached by the Z probe."
       #endif
     #endif
-  #else // !ABL_GRID
-
-    // Check the triangulation points
-    #if ABL_PROBE_PT_1_X < MIN_PROBE_X || ABL_PROBE_PT_1_X > MAX_PROBE_X
+  #elif ENABLED(AUTO_BED_LEVELING_UBL)
+    #if DISABLED(EEPROM_SETTINGS)
+      #error "AUTO_BED_LEVELING_UBL requires EEPROM_SETTINGS. Please update your configuration."
+    #elif !WITHIN(GRID_MAX_POINTS_X, 3, 15) || !WITHIN(GRID_MAX_POINTS_Y, 3, 15)
+      #error "GRID_MAX_POINTS_[XY] must be a whole number between 3 and 15."
+    #endif
+    #if IS_CARTESIAN
+      #if !WITHIN(GRID_MAX_POINTS_X, 3, 15) || !WITHIN(GRID_MAX_POINTS_Y, 3, 15)
+        #error "GRID_MAX_POINTS_[XY] must be a whole number between 3 and 15."
+      #elif !WITHIN(UBL_PROBE_PT_1_X, MIN_PROBE_X, MAX_PROBE_X)
+        #error "The given UBL_PROBE_PT_1_X can't be reached by the Z probe."
+      #elif !WITHIN(UBL_PROBE_PT_2_X, MIN_PROBE_X, MAX_PROBE_X)
+        #error "The given UBL_PROBE_PT_2_X can't be reached by the Z probe."
+      #elif !WITHIN(UBL_PROBE_PT_3_X, MIN_PROBE_X, MAX_PROBE_X)
+        #error "The given UBL_PROBE_PT_3_X can't be reached by the Z probe."
+      #elif !WITHIN(UBL_PROBE_PT_1_Y, MIN_PROBE_Y, MAX_PROBE_Y)
+        #error "The given UBL_PROBE_PT_1_Y can't be reached by the Z probe."
+      #elif !WITHIN(UBL_PROBE_PT_2_Y, MIN_PROBE_Y, MAX_PROBE_Y)
+        #error "The given UBL_PROBE_PT_2_Y can't be reached by the Z probe."
+      #elif !WITHIN(UBL_PROBE_PT_3_Y, MIN_PROBE_Y, MAX_PROBE_Y)
+        #error "The given UBL_PROBE_PT_3_Y can't be reached by the Z probe."
+      #endif
+    #endif
+  #else // AUTO_BED_LEVELING_3POINT
+    #if !WITHIN(ABL_PROBE_PT_1_X, MIN_PROBE_X, MAX_PROBE_X)
       #error "The given ABL_PROBE_PT_1_X can't be reached by the Z probe."
-    #elif ABL_PROBE_PT_2_X < MIN_PROBE_X || ABL_PROBE_PT_2_X > MAX_PROBE_X
+    #elif !WITHIN(ABL_PROBE_PT_2_X, MIN_PROBE_X, MAX_PROBE_X)
       #error "The given ABL_PROBE_PT_2_X can't be reached by the Z probe."
-    #elif ABL_PROBE_PT_3_X < MIN_PROBE_X || ABL_PROBE_PT_3_X > MAX_PROBE_X
+    #elif !WITHIN(ABL_PROBE_PT_3_X, MIN_PROBE_X, MAX_PROBE_X)
       #error "The given ABL_PROBE_PT_3_X can't be reached by the Z probe."
-    #elif ABL_PROBE_PT_1_Y < MIN_PROBE_Y || ABL_PROBE_PT_1_Y > MAX_PROBE_Y
+    #elif !WITHIN(ABL_PROBE_PT_1_Y, MIN_PROBE_Y, MAX_PROBE_Y)
       #error "The given ABL_PROBE_PT_1_Y can't be reached by the Z probe."
-    #elif ABL_PROBE_PT_2_Y < MIN_PROBE_Y || ABL_PROBE_PT_2_Y > MAX_PROBE_Y
+    #elif !WITHIN(ABL_PROBE_PT_2_Y, MIN_PROBE_Y, MAX_PROBE_Y)
       #error "The given ABL_PROBE_PT_2_Y can't be reached by the Z probe."
-    #elif ABL_PROBE_PT_3_Y < MIN_PROBE_Y || ABL_PROBE_PT_3_Y > MAX_PROBE_Y
+    #elif !WITHIN(ABL_PROBE_PT_3_Y, MIN_PROBE_Y, MAX_PROBE_Y)
       #error "The given ABL_PROBE_PT_3_Y can't be reached by the Z probe."
     #endif
-
-  #endif // !ABL_GRID
+  #endif // AUTO_BED_LEVELING_3POINT
 
 #endif // HAS_ABL
 
@@ -639,55 +699,36 @@
 /**
  * Don't set more than one kinematic type
  */
-#define COUNT_KIN_1 0
-#if ENABLED(DELTA)
-  #define COUNT_KIN_2 INCREMENT(COUNT_KIN_1)
-#else
-  #define COUNT_KIN_2 COUNT_KIN_1
-#endif
-#if ENABLED(MORGAN_SCARA)
-  #define COUNT_KIN_3 INCREMENT(COUNT_KIN_2)
-#else
-  #define COUNT_KIN_3 COUNT_KIN_2
-#endif
-#if ENABLED(MAKERARM_SCARA)
-  #define COUNT_KIN_4 INCREMENT(COUNT_KIN_3)
-#else
-  #define COUNT_KIN_4 COUNT_KIN_3
-#endif
-#if ENABLED(COREXY)
-  #define COUNT_KIN_5 INCREMENT(COUNT_KIN_4)
-#else
-  #define COUNT_KIN_5 COUNT_KIN_4
-#endif
-#if ENABLED(COREXZ)
-  #define COUNT_KIN_6 INCREMENT(COUNT_KIN_5)
-#else
-  #define COUNT_KIN_6 COUNT_KIN_5
-#endif
-#if ENABLED(COREYZ)
-  #define COUNT_KIN_7 INCREMENT(COUNT_KIN_6)
-#else
-  #define COUNT_KIN_7 COUNT_KIN_6
-#endif
-#if ENABLED(COREYX)
-  #define COUNT_KIN_8 INCREMENT(COUNT_KIN_7)
-#else
-  #define COUNT_KIN_8 COUNT_KIN_7
-#endif
-#if ENABLED(COREZX)
-  #define COUNT_KIN_9 INCREMENT(COUNT_KIN_8)
-#else
-  #define COUNT_KIN_9 COUNT_KIN_8
-#endif
-#if ENABLED(COREZY)
-  #define COUNT_KIN_10 INCREMENT(COUNT_KIN_9)
-#else
-  #define COUNT_KIN_10 COUNT_KIN_9
-#endif
-#if COUNT_KIN_10 > 1
-  #error "Please enable only one of DELTA, MORGAN_SCARA, MAKERARM_SCARA, COREXY, COREYX, COREXZ, COREZX, COREYZ, or COREZY."
-#endif
+static_assert(1 >= 0
+  #if ENABLED(DELTA)
+    + 1
+  #endif
+  #if ENABLED(MORGAN_SCARA)
+    + 1
+  #endif
+  #if ENABLED(MAKERARM_SCARA)
+    + 1
+  #endif
+  #if ENABLED(COREXY)
+    + 1
+  #endif
+  #if ENABLED(COREXZ)
+    + 1
+  #endif
+  #if ENABLED(COREYZ)
+    + 1
+  #endif
+  #if ENABLED(COREYX)
+    + 1
+  #endif
+  #if ENABLED(COREZX)
+    + 1
+  #endif
+  #if ENABLED(COREZY)
+    + 1
+  #endif
+  , "Please enable only one of DELTA, MORGAN_SCARA, MAKERARM_SCARA, COREXY, COREYX, COREXZ, COREZX, COREYZ, or COREZY."
+);
 
 /**
  * Allen Key
@@ -733,19 +774,21 @@
   #endif
 #endif
 
-#if HAS_FAN0 && CONTROLLERFAN_PIN == FAN_PIN
-  #error "You cannot set CONTROLLERFAN_PIN equal to FAN_PIN."
+#if HAS_FAN0 && CONTROLLER_FAN_PIN == FAN_PIN
+  #error "You cannot set CONTROLLER_FAN_PIN equal to FAN_PIN."
 #endif
 
-#if HAS_CONTROLLERFAN
-  #if E0_AUTO_FAN_PIN == CONTROLLERFAN_PIN
-    #error "You cannot set E0_AUTO_FAN_PIN equal to CONTROLLERFAN_PIN."
-  #elif E1_AUTO_FAN_PIN == CONTROLLERFAN_PIN
-    #error "You cannot set E1_AUTO_FAN_PIN equal to CONTROLLERFAN_PIN."
-  #elif E2_AUTO_FAN_PIN == CONTROLLERFAN_PIN
-    #error "You cannot set E2_AUTO_FAN_PIN equal to CONTROLLERFAN_PIN."
-  #elif E3_AUTO_FAN_PIN == CONTROLLERFAN_PIN
-    #error "You cannot set E3_AUTO_FAN_PIN equal to CONTROLLERFAN_PIN."
+#if ENABLED(USE_CONTROLLER_FAN)
+  #if !HAS_CONTROLLER_FAN
+    #error "USE_CONTROLLER_FAN requires a CONTROLLER_FAN_PIN. Define in Configuration_adv.h."
+  #elif E0_AUTO_FAN_PIN == CONTROLLER_FAN_PIN
+    #error "You cannot set E0_AUTO_FAN_PIN equal to CONTROLLER_FAN_PIN."
+  #elif E1_AUTO_FAN_PIN == CONTROLLER_FAN_PIN
+    #error "You cannot set E1_AUTO_FAN_PIN equal to CONTROLLER_FAN_PIN."
+  #elif E2_AUTO_FAN_PIN == CONTROLLER_FAN_PIN
+    #error "You cannot set E2_AUTO_FAN_PIN equal to CONTROLLER_FAN_PIN."
+  #elif E3_AUTO_FAN_PIN == CONTROLLER_FAN_PIN
+    #error "You cannot set E3_AUTO_FAN_PIN equal to CONTROLLER_FAN_PIN."
   #endif
 #endif
 
@@ -754,7 +797,7 @@
  */
 #if !HAS_HEATER_0
   #error "HEATER_0_PIN not defined for this board."
-#elif !PIN_EXISTS(TEMP_0)
+#elif !PIN_EXISTS(TEMP_0) && !(defined(MAX6675_SS) && MAX6675_SS >= 0)
   #error "TEMP_0_PIN not defined for this board."
 #elif !PIN_EXISTS(E0_STEP) || !PIN_EXISTS(E0_DIR) || !PIN_EXISTS(E0_ENABLE)
   #error "E0_STEP_PIN, E0_DIR_PIN, or E0_ENABLE_PIN not defined for this board."
@@ -784,19 +827,34 @@
     #endif
     #if HOTENDS > 3
       #if TEMP_SENSOR_3 == 0
-        #error "TEMP_SENSOR_3 is required with 4 HOTENDS."
+        #error "TEMP_SENSOR_3 is required with 4 or more HOTENDS."
       #elif !HAS_HEATER_3
         #error "HEATER_3_PIN not defined for this board."
       #elif !PIN_EXISTS(TEMP_3)
         #error "TEMP_3_PIN not defined for this board."
       #endif
+      #if HOTENDS > 4
+        #if TEMP_SENSOR_4 == 0
+          #error "TEMP_SENSOR_4 is required with 5 HOTENDS."
+        #elif !HAS_HEATER_4
+          #error "HEATER_4_PIN not defined for this board."
+        #elif !PIN_EXISTS(TEMP_4)
+          #error "TEMP_4_PIN not defined for this board."
+        #endif
+      #elif TEMP_SENSOR_4 != 0
+        #error "TEMP_SENSOR_4 shouldn't be set with only 4 extruders."
+      #endif
     #elif TEMP_SENSOR_3 != 0
       #error "TEMP_SENSOR_3 shouldn't be set with only 3 extruders."
+    #elif TEMP_SENSOR_4 != 0
+      #error "TEMP_SENSOR_4 shouldn't be set with only 3 extruders."
     #endif
   #elif TEMP_SENSOR_2 != 0
     #error "TEMP_SENSOR_2 shouldn't be set with only 2 extruders."
   #elif TEMP_SENSOR_3 != 0
     #error "TEMP_SENSOR_3 shouldn't be set with only 2 extruders."
+  #elif TEMP_SENSOR_4 != 0
+    #error "TEMP_SENSOR_4 shouldn't be set with only 2 extruders."
   #endif
 #elif TEMP_SENSOR_1 != 0 && DISABLED(TEMP_SENSOR_1_AS_REDUNDANT)
   #error "TEMP_SENSOR_1 shouldn't be set with only 1 extruder."
@@ -804,6 +862,8 @@
   #error "TEMP_SENSOR_2 shouldn't be set with only 1 extruder."
 #elif TEMP_SENSOR_3 != 0
   #error "TEMP_SENSOR_3 shouldn't be set with only 1 extruder."
+#elif TEMP_SENSOR_4 != 0
+  #error "TEMP_SENSOR_4 shouldn't be set with only 1 extruder."
 #endif
 
 #if ENABLED(TEMP_SENSOR_1_AS_REDUNDANT) && TEMP_SENSOR_1 == 0
@@ -837,7 +897,11 @@
 /**
  * Test Extruder Pins
  */
-#if EXTRUDERS > 3
+#if EXTRUDERS > 4
+  #if !PIN_EXISTS(E4_STEP) || !PIN_EXISTS(E4_DIR) || !PIN_EXISTS(E4_ENABLE)
+    #error "E4_STEP_PIN, E4_DIR_PIN, or E4_ENABLE_PIN not defined for this board."
+  #endif
+#elif EXTRUDERS > 3
   #if !PIN_EXISTS(E3_STEP) || !PIN_EXISTS(E3_DIR) || !PIN_EXISTS(E3_ENABLE)
     #error "E3_STEP_PIN, E3_DIR_PIN, or E3_ENABLE_PIN not defined for this board."
   #endif
@@ -854,15 +918,17 @@
 /**
  * Endstops
  */
-#if DISABLED(USE_XMIN_PLUG) && DISABLED(USE_XMAX_PLUG) && !(ENABLED(Z_DUAL_ENDSTOPS) && Z2_USE_ENDSTOP >= _XMAX_ && Z2_USE_ENDSTOP <= _XMIN_)
+#if DISABLED(USE_XMIN_PLUG) && DISABLED(USE_XMAX_PLUG) && !(ENABLED(Z_DUAL_ENDSTOPS) && WITHIN(Z2_USE_ENDSTOP, _XMAX_, _XMIN_))
  #error "You must enable USE_XMIN_PLUG or USE_XMAX_PLUG."
-#elif DISABLED(USE_YMIN_PLUG) && DISABLED(USE_YMAX_PLUG) && !(ENABLED(Z_DUAL_ENDSTOPS) && Z2_USE_ENDSTOP >= _YMAX_ && Z2_USE_ENDSTOP <= _YMIN_)
+#elif DISABLED(USE_YMIN_PLUG) && DISABLED(USE_YMAX_PLUG) && !(ENABLED(Z_DUAL_ENDSTOPS) && WITHIN(Z2_USE_ENDSTOP, _YMAX_, _YMIN_))
  #error "You must enable USE_YMIN_PLUG or USE_YMAX_PLUG."
-#elif DISABLED(USE_ZMIN_PLUG) && DISABLED(USE_ZMAX_PLUG) && !(ENABLED(Z_DUAL_ENDSTOPS) && Z2_USE_ENDSTOP >= _ZMAX_ && Z2_USE_ENDSTOP <= _ZMIN_)
+#elif DISABLED(USE_ZMIN_PLUG) && DISABLED(USE_ZMAX_PLUG) && !(ENABLED(Z_DUAL_ENDSTOPS) && WITHIN(Z2_USE_ENDSTOP, _ZMAX_, _ZMIN_))
  #error "You must enable USE_ZMIN_PLUG or USE_ZMAX_PLUG."
 #elif ENABLED(Z_DUAL_ENDSTOPS)
   #if !Z2_USE_ENDSTOP
     #error "You must set Z2_USE_ENDSTOP with Z_DUAL_ENDSTOPS."
+  #elif Z2_MAX_PIN == 0 && Z2_MIN_PIN == 0
+    #error "Z2_USE_ENDSTOP has been assigned to a nonexistent endstop!"
   #elif ENABLED(DELTA)
     #error "Z_DUAL_ENDSTOPS is not compatible with DELTA."
   #endif
@@ -914,12 +980,23 @@
 /**
  * RGB_LED Requirements
  */
+#define _RGB_TEST (PIN_EXISTS(RGB_LED_R) && PIN_EXISTS(RGB_LED_G) && PIN_EXISTS(RGB_LED_B))
 #if ENABLED(RGB_LED)
-  #if !(PIN_EXISTS(RGB_LED_R) && PIN_EXISTS(RGB_LED_G) && PIN_EXISTS(RGB_LED_B))
+  #if !_RGB_TEST
     #error "RGB_LED requires RGB_LED_R_PIN, RGB_LED_G_PIN, and RGB_LED_B_PIN."
+  #elif ENABLED(RGBW_LED)
+    #error "Please enable only one of RGB_LED and RGBW_LED."
   #elif ENABLED(BLINKM)
     #error "RGB_LED and BLINKM are currently incompatible (both use M150)."
   #endif
+#elif ENABLED(RGBW_LED)
+  #if !(_RGB_TEST && PIN_EXISTS(RGB_LED_W))
+    #error "RGBW_LED requires RGB_LED_R_PIN, RGB_LED_G_PIN, RGB_LED_B_PIN, and RGB_LED_W_PIN."
+  #elif ENABLED(BLINKM)
+    #error "RGBW_LED and BLINKM are currently incompatible (both use M150)."
+  #endif
+#elif DISABLED(BLINKM) && ENABLED(PRINTER_EVENT_LEDS)
+  #error "PRINTER_EVENT_LEDS requires BLINKM, RGB_LED, or RGBW_LED."
 #endif
 
 /**
@@ -938,7 +1015,6 @@
   #endif
 #endif
 
-
 /**
  * Make sure only one display is enabled
  *
@@ -950,124 +1026,172 @@
  *       ELB_FULL_GRAPHIC_CONTROLLER => ULTIMAKERCONTROLLER
  *       PANEL_ONE => ULTIMAKERCONTROLLER
  */
-#define COUNT_LCD_1 0
-#if ENABLED(ULTIMAKERCONTROLLER) \
-    && DISABLED(SAV_3DGLCD) && DISABLED(miniVIKI) && DISABLED(VIKI2) \
-    && DISABLED(ELB_FULL_GRAPHIC_CONTROLLER) && DISABLED(PANEL_ONE)
-  #define COUNT_LCD_2 INCREMENT(COUNT_LCD_1)
-#else
-  #define COUNT_LCD_2 COUNT_LCD_1
+static_assert(1 >= 0
+  #if ENABLED(ULTIMAKERCONTROLLER) \
+      && DISABLED(SAV_3DGLCD) && DISABLED(miniVIKI) && DISABLED(VIKI2) \
+      && DISABLED(ELB_FULL_GRAPHIC_CONTROLLER) && DISABLED(PANEL_ONE)
+    + 1
+  #endif
+  #if ENABLED(REPRAP_DISCOUNT_SMART_CONTROLLER) && DISABLED(REPRAP_DISCOUNT_FULL_GRAPHIC_SMART_CONTROLLER)
+    + 1
+  #endif
+  #if ENABLED(REPRAP_DISCOUNT_FULL_GRAPHIC_SMART_CONTROLLER) && DISABLED(BQ_LCD_SMART_CONTROLLER)
+    + 1
+  #endif
+  #if ENABLED(CARTESIO_UI)
+    + 1
+  #endif
+  #if ENABLED(PANEL_ONE)
+    + 1
+  #endif
+  #if ENABLED(MAKRPANEL)
+    + 1
+  #endif
+  #if ENABLED(REPRAPWORLD_GRAPHICAL_LCD)
+    + 1
+  #endif
+  #if ENABLED(VIKI2)
+    + 1
+  #endif
+  #if ENABLED(miniVIKI)
+    + 1
+  #endif
+  #if ENABLED(ELB_FULL_GRAPHIC_CONTROLLER)
+    + 1
+  #endif
+  #if ENABLED(G3D_PANEL)
+    + 1
+  #endif
+  #if ENABLED(MINIPANEL)
+    + 1
+  #endif
+  #if ENABLED(REPRAPWORLD_KEYPAD) && DISABLED(CARTESIO_UI)
+    + 1
+  #endif
+  #if ENABLED(RIGIDBOT_PANEL)
+    + 1
+  #endif
+  #if ENABLED(RA_CONTROL_PANEL)
+    + 1
+  #endif
+  #if ENABLED(LCD_I2C_SAINSMART_YWROBOT)
+    + 1
+  #endif
+  #if ENABLED(LCM1602)
+    + 1
+  #endif
+  #if ENABLED(LCD_I2C_PANELOLU2)
+    + 1
+  #endif
+  #if ENABLED(LCD_I2C_VIKI)
+    + 1
+  #endif
+  #if ENABLED(U8GLIB_SSD1306) && DISABLED(OLED_PANEL_TINYBOY2)
+    + 1
+  #endif
+  #if ENABLED(SAV_3DLCD)
+    + 1
+  #endif
+  #if ENABLED(BQ_LCD_SMART_CONTROLLER)
+    + 1
+  #endif
+  #if ENABLED(SAV_3DGLCD)
+    + 1
+  #endif
+  #if ENABLED(OLED_PANEL_TINYBOY2)
+    + 1
+  #endif
+  , "Please select no more than one LCD controller option."
+);
+
+#if ENABLED(HAVE_TMC2130) && !( \
+       ENABLED(  X_IS_TMC2130 ) \
+    || ENABLED( X2_IS_TMC2130 ) \
+    || ENABLED(  Y_IS_TMC2130 ) \
+    || ENABLED( Y2_IS_TMC2130 ) \
+    || ENABLED(  Z_IS_TMC2130 ) \
+    || ENABLED( Z2_IS_TMC2130 ) \
+    || ENABLED( E0_IS_TMC2130 ) \
+    || ENABLED( E1_IS_TMC2130 ) \
+    || ENABLED( E2_IS_TMC2130 ) \
+    || ENABLED( E3_IS_TMC2130 ) )
+  #error "Choose at least one TMC2130 stepper."
 #endif
-#if ENABLED(REPRAP_DISCOUNT_SMART_CONTROLLER) && DISABLED(REPRAP_DISCOUNT_FULL_GRAPHIC_SMART_CONTROLLER)
-  #define COUNT_LCD_3 INCREMENT(COUNT_LCD_2)
-#else
-  #define COUNT_LCD_3 COUNT_LCD_2
+
+#if ENABLED(HYBRID_THRESHOLD) && DISABLED(STEALTHCHOP)
+  #error "Enable STEALTHCHOP to use HYBRID_THRESHOLD."
 #endif
-#if ENABLED(REPRAP_DISCOUNT_FULL_GRAPHIC_SMART_CONTROLLER) && DISABLED(BQ_LCD_SMART_CONTROLLER)
-  #define COUNT_LCD_4 INCREMENT(COUNT_LCD_3)
-#else
-  #define COUNT_LCD_4 COUNT_LCD_3
-#endif
-#if ENABLED(CARTESIO_UI)
-  #define COUNT_LCD_5 INCREMENT(COUNT_LCD_4)
-#else
-  #define COUNT_LCD_5 COUNT_LCD_4
-#endif
-#if ENABLED(PANEL_ONE)
-  #define COUNT_LCD_6 INCREMENT(COUNT_LCD_5)
-#else
-  #define COUNT_LCD_6 COUNT_LCD_5
-#endif
-#if ENABLED(MAKRPANEL)
-  #define COUNT_LCD_7 INCREMENT(COUNT_LCD_6)
-#else
-  #define COUNT_LCD_7 COUNT_LCD_6
-#endif
-#if ENABLED(REPRAPWORLD_GRAPHICAL_LCD)
-  #define COUNT_LCD_8 INCREMENT(COUNT_LCD_7)
-#else
-  #define COUNT_LCD_8 COUNT_LCD_7
-#endif
-#if ENABLED(VIKI2)
-  #define COUNT_LCD_9 INCREMENT(COUNT_LCD_8)
-#else
-  #define COUNT_LCD_9 COUNT_LCD_8
-#endif
-#if ENABLED(miniVIKI)
-  #define COUNT_LCD_10 INCREMENT(COUNT_LCD_9)
-#else
-  #define COUNT_LCD_10 COUNT_LCD_9
-#endif
-#if ENABLED(ELB_FULL_GRAPHIC_CONTROLLER)
-  #define COUNT_LCD_11 INCREMENT(COUNT_LCD_10)
-#else
-  #define COUNT_LCD_11 COUNT_LCD_10
-#endif
-#if ENABLED(G3D_PANEL)
-  #define COUNT_LCD_12 INCREMENT(COUNT_LCD_11)
-#else
-  #define COUNT_LCD_12 COUNT_LCD_11
-#endif
-#if ENABLED(MINIPANEL)
-  #define COUNT_LCD_13 INCREMENT(COUNT_LCD_12)
-#else
-  #define COUNT_LCD_13 COUNT_LCD_12
-#endif
-#if ENABLED(REPRAPWORLD_KEYPAD) && DISABLED(CARTESIO_UI)
-  #define COUNT_LCD_14 INCREMENT(COUNT_LCD_13)
-#else
-  #define COUNT_LCD_14 COUNT_LCD_13
-#endif
-#if ENABLED(RIGIDBOT_PANEL)
-  #define COUNT_LCD_15 INCREMENT(COUNT_LCD_14)
-#else
-  #define COUNT_LCD_15 COUNT_LCD_14
-#endif
-#if ENABLED(RA_CONTROL_PANEL)
-  #define COUNT_LCD_16 INCREMENT(COUNT_LCD_15)
-#else
-  #define COUNT_LCD_16 COUNT_LCD_15
-#endif
-#if ENABLED(LCD_I2C_SAINSMART_YWROBOT)
-  #define COUNT_LCD_17 INCREMENT(COUNT_LCD_16)
-#else
-  #define COUNT_LCD_17 COUNT_LCD_16
-#endif
-#if ENABLED(LCM1602)
-  #define COUNT_LCD_18 INCREMENT(COUNT_LCD_17)
-#else
-  #define COUNT_LCD_18 COUNT_LCD_17
-#endif
-#if ENABLED(LCD_I2C_PANELOLU2)
-  #define COUNT_LCD_19 INCREMENT(COUNT_LCD_18)
-#else
-  #define COUNT_LCD_19 COUNT_LCD_18
-#endif
-#if ENABLED(LCD_I2C_VIKI)
-  #define COUNT_LCD_20 INCREMENT(COUNT_LCD_19)
-#else
-  #define COUNT_LCD_20 COUNT_LCD_19
-#endif
-#if ENABLED(U8GLIB_SSD1306)
-  #define COUNT_LCD_21 INCREMENT(COUNT_LCD_20)
-#else
-  #define COUNT_LCD_21 COUNT_LCD_20
-#endif
-#if ENABLED(SAV_3DLCD)
-  #define COUNT_LCD_22 INCREMENT(COUNT_LCD_21)
-#else
-  #define COUNT_LCD_22 COUNT_LCD_21
-#endif
-#if ENABLED(BQ_LCD_SMART_CONTROLLER)
-  #define COUNT_LCD_23 INCREMENT(COUNT_LCD_22)
-#else
-  #define COUNT_LCD_23 COUNT_LCD_22
-#endif
-#if ENABLED(SAV_3DGLCD)
-  #define COUNT_LCD_24 INCREMENT(COUNT_LCD_23)
-#else
-  #define COUNT_LCD_24 COUNT_LCD_23
-#endif
-#if COUNT_LCD_24 > 1
-  #error "Please select no more than one LCD controller option."
-#endif
+
+/**
+ * Require 4 or more elements in per-axis initializers
+ */
+constexpr float sanity_arr_1[] = DEFAULT_AXIS_STEPS_PER_UNIT,
+                sanity_arr_2[] = DEFAULT_MAX_FEEDRATE,
+                sanity_arr_3[] = DEFAULT_MAX_ACCELERATION;
+static_assert(COUNT(sanity_arr_1) >= XYZE, "DEFAULT_AXIS_STEPS_PER_UNIT requires 4 (or more) elements.");
+static_assert(COUNT(sanity_arr_2) >= XYZE, "DEFAULT_MAX_FEEDRATE requires 4 (or more) elements.");
+static_assert(COUNT(sanity_arr_3) >= XYZE, "DEFAULT_MAX_ACCELERATION requires 4 (or more) elements.");
+static_assert(COUNT(sanity_arr_1) <= XYZE_N, "DEFAULT_AXIS_STEPS_PER_UNIT has too many elements.");
+static_assert(COUNT(sanity_arr_2) <= XYZE_N, "DEFAULT_MAX_FEEDRATE has too many elements.");
+static_assert(COUNT(sanity_arr_3) <= XYZE_N, "DEFAULT_MAX_ACCELERATION has too many elements.");
+
+/**
+ * Sanity checks for Spindle / Laser
+ */
+#if ENABLED(SPINDLE_LASER_ENABLE)
+  #if !PIN_EXISTS(SPINDLE_LASER_ENABLE)
+    #error "SPINDLE_LASER_ENABLE requires SPINDLE_LASER_ENABLE_PIN."
+  #elif SPINDLE_DIR_CHANGE && !PIN_EXISTS(SPINDLE_DIR)
+    #error "SPINDLE_DIR_PIN not defined."
+  #elif ENABLED(SPINDLE_LASER_PWM) && PIN_EXISTS(SPINDLE_LASER_PWM)
+    #if !(WITHIN(SPINDLE_LASER_PWM_PIN, 2, 13) || WITHIN(SPINDLE_LASER_PWM_PIN, 44, 46))
+      #error "SPINDLE_LASER_PWM_PIN not assigned to a PWM pin."
+    #elif SPINDLE_LASER_POWERUP_DELAY < 1
+      #error "SPINDLE_LASER_POWERUP_DELAY must be greater than 0."
+    #elif SPINDLE_LASER_POWERDOWN_DELAY < 1
+      #error "SPINDLE_LASER_POWERDOWN_DELAY must be greater than 0."
+    #elif !defined(SPINDLE_LASER_PWM_INVERT)
+      #error "SPINDLE_LASER_PWM_INVERT missing."
+    #elif !defined(SPEED_POWER_SLOPE) || !defined(SPEED_POWER_INTERCEPT) || !defined(SPEED_POWER_MIN) || !defined(SPEED_POWER_MAX)
+      #error "SPINDLE_LASER_PWM equation constant(s) missing."
+    #elif SPINDLE_LASER_PWM_PIN == 4 || WITHIN(SPINDLE_LASER_PWM_PIN, 11, 13)
+      #error "Counter/Timer for SPINDLE_LASER_PWM_PIN is used by a system interrupt."
+    #elif PIN_EXISTS(X_MAX) && X_MAX_PIN == SPINDLE_LASER_PWM_PIN
+      #error "SPINDLE_LASER_PWM pin is in use by X_MAX endstop."
+    #elif PIN_EXISTS(X_MIN) && X_MIN_PIN == SPINDLE_LASER_PWM_PIN
+      #error "SPINDLE_LASER_PWM pin is in use by X_MIN endstop."
+    #elif PIN_EXISTS(Z_STEP) && Z_STEP_PIN == SPINDLE_LASER_PWM_PIN
+      #error "SPINDLE_LASER_PWM pin in use by Z_STEP."
+    #elif NUM_SERVOS > 0 && (WITHIN(SPINDLE_LASER_PWM_PIN, 2, 3) || SPINDLE_LASER_PWM_PIN == 5)
+      #error "Counter/Timer for SPINDLE_LASER_PWM_PIN is used by the servo system."
+    #elif PIN_EXISTS(CASE_LIGHT) && SPINDLE_LASER_PWM_PIN == CASE_LIGHT_PIN
+      #error "SPINDLE_LASER_PWM_PIN is used by CASE_LIGHT_PIN."
+    #elif PIN_EXISTS(E0_AUTO_FAN) && SPINDLE_LASER_PWM_PIN == E0_AUTO_FAN_PIN
+      #error "SPINDLE_LASER_PWM_PIN is used by E0_AUTO_FAN_PIN."
+    #elif PIN_EXISTS(E1_AUTO_FAN) && SPINDLE_LASER_PWM_PIN == E1_AUTO_FAN_PIN
+      #error "SPINDLE_LASER_PWM_PIN is used by E1_AUTO_FAN_PIN."
+    #elif PIN_EXISTS(E2_AUTO_FAN) && SPINDLE_LASER_PWM_PIN == E2_AUTO_FAN_PIN
+      #error "SPINDLE_LASER_PWM_PIN is used by E2_AUTO_FAN_PIN."
+    #elif PIN_EXISTS(E3_AUTO_FAN) && SPINDLE_LASER_PWM_PIN == E3_AUTO_FAN_PIN
+      #error "SPINDLE_LASER_PWM_PIN is used by E3_AUTO_FAN_PIN."
+    #elif PIN_EXISTS(E4_AUTO_FAN) && SPINDLE_LASER_PWM_PIN == E4_AUTO_FAN_PIN
+      #error "SPINDLE_LASER_PWM_PIN is used by E4_AUTO_FAN_PIN."
+    #elif PIN_EXISTS(FAN) && SPINDLE_LASER_PWM_PIN == FAN_PIN
+      #error "SPINDLE_LASER_PWM_PIN is used FAN_PIN."
+    #elif PIN_EXISTS(FAN1) && SPINDLE_LASER_PWM_PIN == FAN1_PIN
+      #error "SPINDLE_LASER_PWM_PIN is used FAN1_PIN."
+    #elif PIN_EXISTS(FAN2) && SPINDLE_LASER_PWM_PIN == FAN2_PIN
+      #error "SPINDLE_LASER_PWM_PIN is used FAN2_PIN."
+    #elif PIN_EXISTS(CONTROLLERFAN) && SPINDLE_LASER_PWM_PIN == CONTROLLERFAN_PIN
+      #error "SPINDLE_LASER_PWM_PIN is used by CONTROLLERFAN_PIN."
+    #elif PIN_EXISTS(MOTOR_CURRENT_PWM_XY) && SPINDLE_LASER_PWM_PIN == MOTOR_CURRENT_PWM_XY_PIN
+      #error "SPINDLE_LASER_PWM_PIN is used by MOTOR_CURRENT_PWM_XY."
+    #elif PIN_EXISTS(MOTOR_CURRENT_PWM_Z) && SPINDLE_LASER_PWM_PIN == MOTOR_CURRENT_PWM_Z_PIN
+      #error "SPINDLE_LASER_PWM_PIN is used by MOTOR_CURRENT_PWM_Z."
+    #elif PIN_EXISTS(MOTOR_CURRENT_PWM_E) && SPINDLE_LASER_PWM_PIN == MOTOR_CURRENT_PWM_E_PIN
+      #error "SPINDLE_LASER_PWM_PIN is used by MOTOR_CURRENT_PWM_E."
+    #elif PIN_EXISTS(CASE_LIGHT) && SPINDLE_LASER_PWM_PIN == CASE_LIGHT_PIN
+      #error "SPINDLE_LASER_PWM_PIN is used by CASE_LIGHT."
+    #endif
+  #endif
+#endif // SPINDLE_LASER_ENABLE
