@@ -160,8 +160,10 @@ class Planner {
                  min_travel_feedrate_mm_s;
 
     #if HAS_ABL
-      static bool abl_enabled;            // Flag that bed leveling is enabled
-      static matrix_3x3 bed_level_matrix; // Transform to compensate for bed level
+      static bool abl_enabled;              // Flag that bed leveling is enabled
+      #if ABL_PLANAR
+        static matrix_3x3 bed_level_matrix; // Transform to compensate for bed level
+      #endif
     #endif
 
     #if ENABLED(ENABLE_LEVELING_FADE_HEIGHT)
@@ -452,7 +454,7 @@ class Planner {
      * 'distance'.
      */
     static float max_allowable_speed(const float &accel, const float &target_velocity, const float &distance) {
-      return sqrt(sq(target_velocity) - 2 * accel * distance);
+      return SQRT(sq(target_velocity) - 2 * accel * distance);
     }
 
     static void calculate_trapezoid_for_block(block_t* const block, const float &entry_factor, const float &exit_factor);

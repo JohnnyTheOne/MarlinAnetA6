@@ -34,34 +34,19 @@
 
 #include "MarlinConfig.h"
 
-#if ENABLED(AUTO_BED_LEVELING_UBL)  // Currently only used by UBL, but is applicable to Grid Based (Linear) Bed Leveling
+#if ENABLED(AUTO_BED_LEVELING_UBL) || ENABLED(AUTO_BED_LEVELING_LINEAR)
 
 #include "macros.h"
 #include <math.h>
 
 #include "least_squares_fit.h"
 
-void incremental_LSF_reset(struct linear_fit_data *lsf) {
-  memset(lsf, 0, sizeof(linear_fit_data));
-}
-
-void incremental_LSF(struct linear_fit_data *lsf, float x, float y, float z) {
-  lsf->xbar += x;
-  lsf->ybar += y;
-  lsf->zbar += z;
-  lsf->x2bar += sq(x);
-  lsf->y2bar += sq(y);
-  lsf->z2bar += sq(z);
-  lsf->xybar += x * y;
-  lsf->xzbar += x * z;
-  lsf->yzbar += y * z;
-  lsf->max_absx = max(fabs(x), lsf->max_absx);
-  lsf->max_absy = max(fabs(y), lsf->max_absy);
-  lsf->n++;
-}
-
 int finish_incremental_LSF(struct linear_fit_data *lsf) {
-  const float N = (float)lsf->n;
+
+  const float N = lsf->N;
+
+  if (N == 0.0)
+    return 1;
 
   lsf->xbar /= N;
   lsf->ybar /= N;
@@ -74,7 +59,7 @@ int finish_incremental_LSF(struct linear_fit_data *lsf) {
   lsf->xzbar = lsf->xzbar / N - lsf->xbar * lsf->zbar;
   const float DD = lsf->x2bar * lsf->y2bar - sq(lsf->xybar);
 
-  if (fabs(DD) <= 1e-10 * (lsf->max_absx + lsf->max_absy))
+  if (FABS(DD) <= 1e-10 * (lsf->max_absx + lsf->max_absy))
     return 1;
 
   lsf->A = (lsf->yzbar * lsf->xybar - lsf->xzbar * lsf->y2bar) / DD;
@@ -83,4 +68,4 @@ int finish_incremental_LSF(struct linear_fit_data *lsf) {
   return 0;
 }
 
-#endif // AUTO_BED_LEVELING_UBL
+#endif // AUTO_BED_LEVELING_UBL || ENABLED(AUTO_BED_LEVELING_LINEAR)  
